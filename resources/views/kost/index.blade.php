@@ -44,6 +44,9 @@
                             <a href="{{ route('kost.edit', $k->id_kost) }}" style="padding: 8px 16px; background: #c41e6a; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600;">
                                 ✏️ Edit
                             </a>
+                            <a href="{{ route('kost.settings.edit', $k->id_kost) }}" style="padding: 8px 16px; background: #4facfe; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600;">
+                                ⚙️ Fitur
+                            </a>
                             <form action="{{ route('kost.destroy', $k->id_kost) }}" method="POST" style="display: inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kost ini?')">
                                 @csrf
                                 @method('DELETE')

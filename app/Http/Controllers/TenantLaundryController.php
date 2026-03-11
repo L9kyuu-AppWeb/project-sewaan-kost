@@ -29,6 +29,14 @@ class TenantLaundryController extends Controller
             ->with('kamar.kost')
             ->first();
 
+        // Check if laundry feature is enabled for their kost
+        if ($activePesanan && $activePesanan->kamar) {
+            if (!$activePesanan->kamar->kost->isFeatureEnabled('laundry')) {
+                return redirect()->route('dashboard.penyewa')
+                    ->with('error', 'Fitur laundry belum diaktifkan oleh pengelola kost.');
+            }
+        }
+
         // Get all laundry orders by this tenant
         $query = PesananLaundry::with(['laundryType', 'kost', 'pembayaran'])
             ->where('id_penyewa', $tenant->id_user)
@@ -58,8 +66,14 @@ class TenantLaundryController extends Controller
             ->first();
 
         if (!$activePesanan || !$activePesanan->kamar) {
-            return redirect()->route('laundry.orders.index')
+            return redirect()->route('dashboard.penyewa')
                 ->with('error', 'Anda harus memiliki pemesanan kost aktif untuk memesan laundry.');
+        }
+
+        // Check if laundry feature is enabled
+        if (!$activePesanan->kamar->kost->isFeatureEnabled('laundry')) {
+            return redirect()->route('dashboard.penyewa')
+                ->with('error', 'Fitur laundry belum diaktifkan oleh pengelola kost.');
         }
 
         $kost = $activePesanan->kamar->kost;

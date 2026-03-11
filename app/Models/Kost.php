@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Kost extends Model
 {
@@ -136,5 +137,22 @@ class Kost extends Model
     public function laundryOrders(): HasMany
     {
         return $this->hasMany(PesananLaundry::class, 'id_kost', 'id_kost');
+    }
+
+    /**
+     * Get the settings for this kost.
+     */
+    public function setting(): HasOne
+    {
+        return $this->hasOne(KostSetting::class, 'id_kost', 'id_kost');
+    }
+
+    /**
+     * Check if a feature is enabled for this kost.
+     */
+    public function isFeatureEnabled(string $feature): bool
+    {
+        $setting = $this->setting ?? KostSetting::getOrCreate($this->id_kost);
+        return $setting->isFeatureEnabled($feature);
     }
 }

@@ -60,8 +60,14 @@
         </h2>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+            @php
+                $featuresEnabled = $stats['features_enabled'] ?? ['makanan' => false, 'galon' => false, 'laundry' => false];
+            @endphp
+
+            @if ($featuresEnabled['makanan'])
             {{-- Makanan Orders --}}
-            <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+            <a href="{{ route('owner.orders.index') }}" style="text-decoration: none; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); transition: transform 0.2s;"
+               onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
                     <span style="font-size: 32px;">🍽️</span>
                     <p style="font-size: 13px; color: #666; font-weight: 600;">Makanan</p>
@@ -71,10 +77,13 @@
                     <span style="color: #f093fb;">⏳ {{ $stats['pesanan_makanan_pending'] ?? 0 }}</span>
                     <span style="color: #4facfe;">⚙️ {{ $stats['pesanan_makanan_proses'] ?? 0 }}</span>
                 </div>
-            </div>
+            </a>
+            @endif
 
+            @if ($featuresEnabled['galon'])
             {{-- Galon Orders --}}
-            <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+            <a href="{{ route('owner.galon.index') }}" style="text-decoration: none; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); transition: transform 0.2s;"
+               onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
                     <span style="font-size: 32px;">💧</span>
                     <p style="font-size: 13px; color: #666; font-weight: 600;">Galon</p>
@@ -84,10 +93,13 @@
                     <span style="color: #f093fb;">⏳ {{ $stats['pesanan_galon_pending'] ?? 0 }}</span>
                     <span style="color: #4facfe;">⚙️ {{ $stats['pesanan_galon_proses'] ?? 0 }}</span>
                 </div>
-            </div>
+            </a>
+            @endif
 
+            @if ($featuresEnabled['laundry'])
             {{-- Laundry Orders --}}
-            <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #96fbc4 0%, #f9f586 100%);">
+            <a href="{{ route('owner.laundry.index') }}" style="text-decoration: none; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #96fbc4 0%, #f9f586 100%); transition: transform 0.2s;"
+               onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
                     <span style="font-size: 32px;">👕</span>
                     <p style="font-size: 13px; color: #666; font-weight: 600;">Laundry</p>
@@ -97,7 +109,14 @@
                     <span style="color: #f093fb;">⏳ {{ $stats['pesanan_laundry_pending'] ?? 0 }}</span>
                     <span style="color: #4facfe;">🧼 {{ $stats['pesanan_laundry_proses'] ?? 0 }}</span>
                 </div>
-            </div>
+            </a>
+            @endif
+
+            @if (!$featuresEnabled['makanan'] && !$featuresEnabled['galon'] && !$featuresEnabled['laundry'])
+            <p style="color: #666; font-size: 14px; grid-column: 1/-1; text-align: center; padding: 20px;">
+                ℹ️ Belum ada fitur layanan yang diaktifkan. <a href="{{ route('kost.index') }}" style="color: #970747; font-weight: 600;">Kelola kost Anda</a> untuk mengaktifkan fitur.
+            </p>
+            @endif
 
             {{-- Pending Payments --}}
             <a href="{{ route('pesan.owner.index') }}" style="text-decoration: none; background: linear-gradient(135deg, #ffa751 0%, #ffe259 100%); padding: 20px; border-radius: 12px; color: white; transition: transform 0.2s;"
@@ -145,7 +164,7 @@
         <h3 style="font-size: 16px; color: #333; margin-bottom: 15px; font-weight: 600;">📊 Berdasarkan Tipe Layanan</h3>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
-            {{-- Kamar Revenue --}}
+            {{-- Kamar Revenue (Always shown) --}}
             <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                     <div>
@@ -163,6 +182,7 @@
                 </div>
             </div>
 
+            @if ($featuresEnabled['makanan'] ?? false)
             {{-- Makanan Revenue --}}
             <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
@@ -180,7 +200,9 @@
                     </p>
                 </div>
             </div>
+            @endif
 
+            @if ($featuresEnabled['galon'] ?? false)
             {{-- Galon Revenue --}}
             <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
@@ -198,7 +220,9 @@
                     </p>
                 </div>
             </div>
+            @endif
 
+            @if ($featuresEnabled['laundry'] ?? false)
             {{-- Laundry Revenue --}}
             <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #96fbc4 0%, #f9f586 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
@@ -216,6 +240,7 @@
                     </p>
                 </div>
             </div>
+            @endif
         </div>
     </div>
 

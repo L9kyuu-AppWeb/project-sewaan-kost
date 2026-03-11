@@ -39,11 +39,21 @@ class PesanController extends Controller
     public function create($kamarId)
     {
         $kamar = Kamar::with(['kost'])->findOrFail($kamarId);
-        
+
         // Check if room is available
         if ($kamar->status_kamar !== 'tersedia') {
             return redirect()->route('kost-public.show', $kamar->kost->id_kost)
                 ->with('error', 'Maaf, kamar ini tidak tersedia.');
+        }
+
+        // Check if tenant already has active booking
+        $activeBooking = Pesan::where('id_penyewa', Auth::id())
+            ->where('status_pesan', 'aktif')
+            ->first();
+
+        if ($activeBooking) {
+            return redirect()->route('pesan.show', $activeBooking->id_pesan)
+                ->with('error', 'Anda masih memiliki pemesanan kamar aktif. Silakan selesaikan atau batalkan pemesanan aktif Anda sebelum memesan kamar baru.');
         }
 
         return view('pesan.create', compact('kamar'));
@@ -54,6 +64,16 @@ class PesanController extends Controller
      */
     public function store(Request $request)
     {
+        // Double-check: Check if tenant already has active booking
+        $activeBooking = Pesan::where('id_penyewa', Auth::id())
+            ->where('status_pesan', 'aktif')
+            ->first();
+
+        if ($activeBooking) {
+            return redirect()->route('pesan.show', $activeBooking->id_pesan)
+                ->with('error', 'Anda masih memiliki pemesanan kamar aktif. Silakan selesaikan atau batalkan pemesanan aktif Anda sebelum memesan kamar baru.');
+        }
+
         $validated = $request->validate([
             'id_kamar' => 'required|exists:kamar,id_kamar',
             'tgl_mulai' => [

@@ -29,6 +29,14 @@ class TenantGalonController extends Controller
             ->with('kamar.kost')
             ->first();
 
+        // Check if galon feature is enabled for their kost
+        if ($activePesanan && $activePesanan->kamar) {
+            if (!$activePesanan->kamar->kost->isFeatureEnabled('galon')) {
+                return redirect()->route('dashboard.penyewa')
+                    ->with('error', 'Fitur galon belum diaktifkan oleh pengelola kost.');
+            }
+        }
+
         // Get all galon orders by this tenant
         $query = PesananGalon::with(['galonType', 'kost', 'pembayaran'])
             ->where('id_penyewa', $tenant->id_user)
@@ -58,8 +66,14 @@ class TenantGalonController extends Controller
             ->first();
 
         if (!$activePesanan || !$activePesanan->kamar) {
-            return redirect()->route('galon.catalog')
+            return redirect()->route('dashboard.penyewa')
                 ->with('error', 'Anda harus memiliki pemesanan kost aktif untuk memesan galon.');
+        }
+
+        // Check if galon feature is enabled
+        if (!$activePesanan->kamar->kost->isFeatureEnabled('galon')) {
+            return redirect()->route('dashboard.penyewa')
+                ->with('error', 'Fitur galon belum diaktifkan oleh pengelola kost.');
         }
 
         $kost = $activePesanan->kamar->kost;

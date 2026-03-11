@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GalonController;
 use App\Http\Controllers\KamarController;
 use App\Http\Controllers\KostController;
+use App\Http\Controllers\KostSettingController;
 use App\Http\Controllers\KostPublicController;
 use App\Http\Controllers\LaundryController;
 use App\Http\Controllers\MakananController;
@@ -122,7 +123,7 @@ Route::middleware('auth')->group(function () {
                 ->whereIn('transaction_status', ['settlement', 'capture'])
                 ->sum('jumlah_bayar'),
 
-            // Order statistics - MAKANAN
+        // Order statistics - MAKANAN
             'total_pesanan_makanan' => \App\Models\PesananMakananHeader::whereIn('id_kost', $kostIds)->count(),
             'pesanan_makanan_pending' => \App\Models\PesananMakananHeader::whereIn('id_kost', $kostIds)
                 ->where('status_antar', 'menunggu_bayar')->count(),
@@ -142,6 +143,16 @@ Route::middleware('auth')->group(function () {
                 ->where('status_laundry', 'menunggu_bayar')->count(),
             'pesanan_laundry_proses' => \App\Models\PesananLaundry::whereIn('id_kost', $kostIds)
                 ->where('status_laundry', 'sedang_dicuci')->count(),
+
+            // Feature settings
+            'features_enabled' => [
+                'makanan' => \App\Models\Kost::whereIn('id_kost', $kostIds)
+                    ->whereHas('setting', function($q) { $q->where('enable_makanan', true); })->count() > 0,
+                'galon' => \App\Models\Kost::whereIn('id_kost', $kostIds)
+                    ->whereHas('setting', function($q) { $q->where('enable_galon', true); })->count() > 0,
+                'laundry' => \App\Models\Kost::whereIn('id_kost', $kostIds)
+                    ->whereHas('setting', function($q) { $q->where('enable_laundry', true); })->count() > 0,
+            ],
 
             // TOTAL Revenue (all payment types)
             'pendapatan_bulan_ini' => \App\Models\Pembayaran::whereIn('tipe_pembayaran', ['kamar', 'makanan', 'galon', 'laundry'])
@@ -255,6 +266,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/{kost}/edit', [KostController::class, 'edit'])->name('edit');
         Route::put('/{kost}', [KostController::class, 'update'])->name('update');
         Route::delete('/{kost}', [KostController::class, 'destroy'])->name('destroy');
+        
+        // Kost settings routes
+        Route::get('/{kost}/settings', [KostSettingController::class, 'edit'])->name('settings.edit');
+        Route::put('/{kost}/settings', [KostSettingController::class, 'update'])->name('settings.update');
     });
 
     // Kamar management routes (for pemilik only)

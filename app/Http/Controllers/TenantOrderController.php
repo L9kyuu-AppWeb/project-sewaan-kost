@@ -22,12 +22,20 @@ class TenantOrderController extends Controller
     {
         $tenant = Auth::user();
         $status = $request->query('status');
-        
+
         // Get tenant's active booking to determine their kost
         $activePesanan = Pesan::where('id_penyewa', $tenant->id_user)
             ->whereIn('status_pesan', [Pesan::STATUS_AKTIF, Pesan::STATUS_PROSES_VERIFIKASI])
             ->with('kamar.kost')
             ->first();
+
+        // Check if makanan feature is enabled for their kost
+        if ($activePesanan && $activePesanan->kamar) {
+            if (!$activePesanan->kamar->kost->isFeatureEnabled('makanan')) {
+                return redirect()->route('dashboard.penyewa')
+                    ->with('error', 'Fitur makanan belum diaktifkan oleh pengelola kost.');
+            }
+        }
 
         // Get all food order headers by this tenant
         $query = PesananMakananHeader::with(['details.makanan', 'kost', 'latestPembayaran'])
@@ -50,7 +58,7 @@ class TenantOrderController extends Controller
     public function create()
     {
         $tenant = Auth::user();
-        
+
         // Get tenant's active booking
         $activePesanan = Pesan::where('id_penyewa', $tenant->id_user)
             ->whereIn('status_pesan', [Pesan::STATUS_AKTIF, Pesan::STATUS_PROSES_VERIFIKASI])
@@ -58,12 +66,18 @@ class TenantOrderController extends Controller
             ->first();
 
         if (!$activePesanan || !$activePesanan->kamar) {
-            return redirect()->route('food.index')
+            return redirect()->route('dashboard.penyewa')
                 ->with('error', 'Anda harus memiliki pemesanan kost aktif untuk memesan makanan.');
         }
 
+        // Check if makanan feature is enabled
+        if (!$activePesanan->kamar->kost->isFeatureEnabled('makanan')) {
+            return redirect()->route('dashboard.penyewa')
+                ->with('error', 'Fitur makanan belum diaktifkan oleh pengelola kost.');
+        }
+
         $kost = $activePesanan->kamar->kost;
-        
+
         // Get available food menus
         $makanans = Makanan::where('id_kost', $kost->id_kost)
             ->where('is_available', true)

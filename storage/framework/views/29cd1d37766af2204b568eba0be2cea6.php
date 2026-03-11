@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Sewa An Kost - Sistem Manajemen Sewa Kost Modern'); ?>
 
-@section('title', 'Sewa An Kost - Sistem Manajemen Sewa Kost Modern')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <!-- Hero Section -->
 <div style="background: linear-gradient(135deg, #970747 0%, #c41e6a 100%); padding: 80px 20px 60px; margin-bottom: 40px;">
     <div style="max-width: 1200px; margin: 0 auto; text-align: center; color: white;">
@@ -15,23 +13,23 @@
             Kelola properti, pesanan makanan, galon, dan laundry dalam satu tempat
         </p>
         
-        @guest
+        <?php if(auth()->guard()->guest()): ?>
             <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                <a href="{{ route('kost-public.index') }}" class="btn" style="background: white; color: #970747; font-size: 16px; padding: 16px 32px; min-width: 180px;">
+                <a href="<?php echo e(route('kost-public.index')); ?>" class="btn" style="background: white; color: #970747; font-size: 16px; padding: 16px 32px; min-width: 180px;">
                     🔍 Cari Kost Sekarang
                 </a>
-                <a href="{{ route('register') }}" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; font-size: 16px; padding: 16px 32px; min-width: 180px;">
+                <a href="<?php echo e(route('register')); ?>" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; font-size: 16px; padding: 16px 32px; min-width: 180px;">
                     📝 Daftar Gratis
                 </a>
             </div>
-        @else
+        <?php else: ?>
             <div style="margin-top: 30px;">
-                <a href="{{ auth()->user()->role === 'pemilik' ? route('dashboard.pemilik') : route('dashboard.penyewa') }}" 
+                <a href="<?php echo e(auth()->user()->role === 'pemilik' ? route('dashboard.pemilik') : route('dashboard.penyewa')); ?>" 
                    class="btn" style="background: white; color: #970747; font-size: 18px; padding: 16px 40px; min-width: 220px;">
                     📊 Buka Dashboard
                 </a>
             </div>
-        @endguest
+        <?php endif; ?>
     </div>
 </div>
 
@@ -192,7 +190,7 @@
 </div>
 
 <!-- CTA Section -->
-@guest
+<?php if(auth()->guard()->guest()): ?>
 <div style="max-width: 800px; margin: 0 auto; padding: 0 20px 60px; text-align: center;">
     <div style="background: linear-gradient(135deg, #970747 0%, #c41e6a 100%); border-radius: 20px; padding: 50px 30px; box-shadow: 0 10px 40px rgba(151,7,71,0.3);">
         <h2 style="font-size: 32px; color: white; margin-bottom: 15px; font-weight: 700;">
@@ -202,16 +200,16 @@
             Bergabunglah dengan ratusan pemilik kost dan penyewa yang telah menggunakan platform kami
         </p>
         <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-            <a href="{{ route('register') }}" class="btn" style="background: white; color: #970747; font-size: 16px; padding: 16px 32px; min-width: 180px;">
+            <a href="<?php echo e(route('register')); ?>" class="btn" style="background: white; color: #970747; font-size: 16px; padding: 16px 32px; min-width: 180px;">
                 🚀 Daftar Sekarang - Gratis!
             </a>
-            <a href="{{ route('login') }}" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; font-size: 16px; padding: 16px 32px; min-width: 150px;">
+            <a href="<?php echo e(route('login')); ?>" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; font-size: 16px; padding: 16px 32px; min-width: 150px;">
                 🔐 Login
             </a>
         </div>
     </div>
 </div>
-@endguest
+<?php endif; ?>
 
 <!-- Footer -->
 <div style="background: #222; color: white; padding: 40px 20px; margin-top: 40px;">
@@ -239,4 +237,6 @@
         60% { transform: translateY(-10px); }
     }
 </style>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\laravel-sewaan-kost\resources\views/home.blade.php ENDPATH**/ ?>

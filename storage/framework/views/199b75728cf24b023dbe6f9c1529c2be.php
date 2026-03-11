@@ -1,86 +1,87 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Dashboard Pemilik - Sewa An Kost'); ?>
 
-@section('title', 'Dashboard Pemilik - Sewa An Kost')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container-full">
     <div style="margin-bottom: 30px;">
         <h1 style="font-size: 28px; color: white; margin-bottom: 5px;">🏢 Dashboard Pemilik</h1>
         <p style="color: rgba(255,255,255,0.9);">Kelola properti dan pantau pembayaran penyewa</p>
     </div>
 
-    {{-- Profile Card --}}
+    
     <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
         <div style="display: flex; align-items: center; gap: 15px;">
             <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #970747 0%, #c41e6a 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 600;">
-                {{ substr(auth()->user()->nama_lengkap, 0, 1) }}
+                <?php echo e(substr(auth()->user()->nama_lengkap, 0, 1)); ?>
+
             </div>
             <div>
-                <h2 style="font-size: 18px; color: #333; margin-bottom: 3px;">{{ auth()->user()->nama_lengkap }}</h2>
+                <h2 style="font-size: 18px; color: #333; margin-bottom: 3px;"><?php echo e(auth()->user()->nama_lengkap); ?></h2>
                 <p style="color: #666; font-size: 14px;">
-                    {{ auth()->user()->email }} • {{ auth()->user()->no_hp }}
+                    <?php echo e(auth()->user()->email); ?> • <?php echo e(auth()->user()->no_hp); ?>
+
                 </p>
                 <p style="color: #999; font-size: 12px; margin-top: 5px;">🏢 Pemilik Kost</p>
             </div>
         </div>
     </div>
 
-    {{-- Quick Actions --}}
+    
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
-        <a href="{{ route('kost.index') }}" style="text-decoration: none; background: linear-gradient(135deg, #970747 0%, #c41e6a 100%); padding: 25px; border-radius: 12px; color: white; transition: transform 0.2s, box-shadow 0.2s;"
+        <a href="<?php echo e(route('kost.index')); ?>" style="text-decoration: none; background: linear-gradient(135deg, #970747 0%, #c41e6a 100%); padding: 25px; border-radius: 12px; color: white; transition: transform 0.2s, box-shadow 0.2s;"
            onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 30px rgba(151,7,71,0.3)'"
            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
             <span style="font-size: 36px; display: block; margin-bottom: 10px;">🏢</span>
-            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 5px;">{{ $stats['total_kost'] ?? 0 }}</h3>
+            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 5px;"><?php echo e($stats['total_kost'] ?? 0); ?></h3>
             <p style="font-size: 13px; opacity: 0.9;">Total Kost</p>
         </a>
-        <a href="{{ route('kamar.index') }}" style="text-decoration: none; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 25px; border-radius: 12px; color: white; transition: transform 0.2s, box-shadow 0.2s;"
+        <a href="<?php echo e(route('kamar.index')); ?>" style="text-decoration: none; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 25px; border-radius: 12px; color: white; transition: transform 0.2s, box-shadow 0.2s;"
            onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 30px rgba(79,172,254,0.3)'"
            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
             <span style="font-size: 36px; display: block; margin-bottom: 10px;">🛏️</span>
-            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 5px;">{{ $stats['total_kamar'] ?? 0 }}</h3>
+            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 5px;"><?php echo e($stats['total_kamar'] ?? 0); ?></h3>
             <p style="font-size: 13px; opacity: 0.9;">Total Kamar</p>
         </a>
         <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 25px; border-radius: 12px; color: white;">
             <span style="font-size: 36px; display: block; margin-bottom: 10px;">📊</span>
-            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 5px;">{{ $stats['kamar_terisi'] ?? 0 }}</h3>
+            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 5px;"><?php echo e($stats['kamar_terisi'] ?? 0); ?></h3>
             <p style="font-size: 13px; opacity: 0.9;">Kamar Terisi</p>
         </div>
         <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 25px; border-radius: 12px; color: white;">
             <span style="font-size: 36px; display: block; margin-bottom: 10px;">👥</span>
-            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 5px;">{{ $stats['penyewa_aktif'] ?? 0 }}</h3>
+            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 5px;"><?php echo e($stats['penyewa_aktif'] ?? 0); ?></h3>
             <p style="font-size: 13px; opacity: 0.9;">Penyewa Aktif</p>
         </div>
-        <a href="{{ route('pesan.owner.index') }}" style="text-decoration: none; background: linear-gradient(135deg, #ffa751 0%, #ffe259 100%); padding: 25px; border-radius: 12px; color: white; transition: transform 0.2s, box-shadow 0.2s;"
+        <a href="<?php echo e(route('pesan.owner.index')); ?>" style="text-decoration: none; background: linear-gradient(135deg, #ffa751 0%, #ffe259 100%); padding: 25px; border-radius: 12px; color: white; transition: transform 0.2s, box-shadow 0.2s;"
            onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 30px rgba(255,167,81,0.3)'"
            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
             <span style="font-size: 36px; display: block; margin-bottom: 10px;">⏳</span>
-            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 5px;">{{ $stats['pending_payments'] ?? 0 }}</h3>
+            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 5px;"><?php echo e($stats['pending_payments'] ?? 0); ?></h3>
             <p style="font-size: 13px; opacity: 0.9;">Pembayaran Pending</p>
         </a>
     </div>
 
-    {{-- Revenue Statistics --}}
+    
     <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
         <h2 style="font-size: 20px; color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
             💰 Statistik Pendapatan
         </h2>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-            {{-- Bulan Ini --}}
+            
             <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                     <div>
                         <p style="font-size: 13px; color: #666; margin-bottom: 5px;">📅 Bulan Ini</p>
-                        <p style="font-size: 12px; color: #999; margin: 0;">{{ now()->format('F Y') }}</p>
+                        <p style="font-size: 12px; color: #999; margin: 0;"><?php echo e(now()->format('F Y')); ?></p>
                     </div>
                     <span style="font-size: 32px;">💰</span>
                 </div>
                 <p style="font-size: 28px; color: #333; font-weight: 700; margin: 0;">
-                    Rp {{ number_format($stats['pendapatan_bulan_ini'] ?? 0, 0, ',', '.') }}
+                    Rp <?php echo e(number_format($stats['pendapatan_bulan_ini'] ?? 0, 0, ',', '.')); ?>
+
                 </p>
                 <p style="font-size: 12px; color: #666; margin: 5px 0 0;">
-                    @php
+                    <?php
                         $prevMonth = now()->copy()->subMonth();
                         $prevMonthRevenue = \App\Models\Pembayaran::whereHas('pesan.kamar.kost', function ($q) {
                             $q->where('id_pemilik', auth()->id());
@@ -92,31 +93,32 @@
                         
                         $currentRevenue = $stats['pendapatan_bulan_ini'] ?? 0;
                         $growth = $prevMonthRevenue > 0 ? (($currentRevenue - $prevMonthRevenue) / $prevMonthRevenue) * 100 : 0;
-                    @endphp
-                    @if($growth > 0)
-                        <span style="color: #28a745;">↑ {{ number_format($growth, 1) }}%</span> dari bulan lalu
-                    @elseif($growth < 0)
-                        <span style="color: #dc3545;">↓ {{ number_format(abs($growth), 1) }}%</span> dari bulan lalu
-                    @else
+                    ?>
+                    <?php if($growth > 0): ?>
+                        <span style="color: #28a745;">↑ <?php echo e(number_format($growth, 1)); ?>%</span> dari bulan lalu
+                    <?php elseif($growth < 0): ?>
+                        <span style="color: #dc3545;">↓ <?php echo e(number_format(abs($growth), 1)); ?>%</span> dari bulan lalu
+                    <?php else: ?>
                         <span style="color: #666;">=</span> sama dengan bulan lalu
-                    @endif
+                    <?php endif; ?>
                 </p>
             </div>
 
-            {{-- Tahun Ini --}}
+            
             <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                     <div>
                         <p style="font-size: 13px; color: #666; margin-bottom: 5px;">📅 Tahun Ini</p>
-                        <p style="font-size: 12px; color: #999; margin: 0;">{{ now()->year }}</p>
+                        <p style="font-size: 12px; color: #999; margin: 0;"><?php echo e(now()->year); ?></p>
                     </div>
                     <span style="font-size: 32px;">📈</span>
                 </div>
                 <p style="font-size: 28px; color: #333; font-weight: 700; margin: 0;">
-                    Rp {{ number_format($stats['pendapatan_tahun_ini'] ?? 0, 0, ',', '.') }}
+                    Rp <?php echo e(number_format($stats['pendapatan_tahun_ini'] ?? 0, 0, ',', '.')); ?>
+
                 </p>
                 <p style="font-size: 12px; color: #666; margin: 5px 0 0;">
-                    @php
+                    <?php
                         $prevYear = now()->copy()->subYear();
                         $prevYearRevenue = \App\Models\Pembayaran::whereHas('pesan.kamar.kost', function ($q) {
                             $q->where('id_pemilik', auth()->id());
@@ -127,18 +129,18 @@
                         
                         $currentYearRevenue = $stats['pendapatan_tahun_ini'] ?? 0;
                         $yearGrowth = $prevYearRevenue > 0 ? (($currentYearRevenue - $prevYearRevenue) / $prevYearRevenue) * 100 : 0;
-                    @endphp
-                    @if($yearGrowth > 0)
-                        <span style="color: #28a745;">↑ {{ number_format($yearGrowth, 1) }}%</span> dari tahun lalu
-                    @elseif($yearGrowth < 0)
-                        <span style="color: #dc3545;">↓ {{ number_format(abs($yearGrowth), 1) }}%</span> dari tahun lalu
-                    @else
+                    ?>
+                    <?php if($yearGrowth > 0): ?>
+                        <span style="color: #28a745;">↑ <?php echo e(number_format($yearGrowth, 1)); ?>%</span> dari tahun lalu
+                    <?php elseif($yearGrowth < 0): ?>
+                        <span style="color: #dc3545;">↓ <?php echo e(number_format(abs($yearGrowth), 1)); ?>%</span> dari tahun lalu
+                    <?php else: ?>
                         <span style="color: #666;">=</span> sama dengan tahun lalu
-                    @endif
+                    <?php endif; ?>
                 </p>
             </div>
 
-            {{-- Total Pendapatan --}}
+            
             <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #96fbc4 0%, #f9f586 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                     <div>
@@ -148,20 +150,21 @@
                     <span style="font-size: 32px;">🏆</span>
                 </div>
                 <p style="font-size: 28px; color: #333; font-weight: 700; margin: 0;">
-                    Rp {{ number_format($stats['pendapatan_total'] ?? 0, 0, ',', '.') }}
+                    Rp <?php echo e(number_format($stats['pendapatan_total'] ?? 0, 0, ',', '.')); ?>
+
                 </p>
                 <p style="font-size: 12px; color: #666; margin: 5px 0 0;">
-                    Dari {{ \App\Models\Pembayaran::whereHas('pesan.kamar.kost', function ($q) {
+                    Dari <?php echo e(\App\Models\Pembayaran::whereHas('pesan.kamar.kost', function ($q) {
                         $q->where('id_pemilik', auth()->id());
                     })
                         ->whereIn('transaction_status', ['settlement', 'capture'])
-                        ->count() }} pembayaran berhasil
+                        ->count()); ?> pembayaran berhasil
                 </p>
             </div>
         </div>
     </div>
 
-    {{-- Payment Info --}}
+    
     <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
         <h2 style="font-size: 20px; color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
             💳 Status Pembayaran Midtrans
@@ -201,8 +204,8 @@
         </div>
     </div>
 
-    {{-- Recent Activity --}}
-    @php
+    
+    <?php
         $recentPesanans = \App\Models\Pesan::with(['penyewa', 'kamar.kost', 'latestPayment'])
             ->whereHas('kamar.kost', function ($q) {
                 $q->where('id_pemilik', auth()->id());
@@ -210,9 +213,9 @@
             ->latest('id_pesan')
             ->limit(5)
             ->get();
-    @endphp
+    ?>
 
-    @if($recentPesanans->count() > 0)
+    <?php if($recentPesanans->count() > 0): ?>
     <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
         <h2 style="font-size: 20px; color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
             📋 Pemesanan Terbaru
@@ -230,8 +233,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($recentPesanans as $pesan)
-                        @php
+                    <?php $__currentLoopData = $recentPesanans; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $pesan): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php
                             $latestPayment = $pesan->latestPayment;
                             $paymentStatus = $latestPayment?->transaction_status ?? '-';
                             $paymentBadge = match($paymentStatus) {
@@ -248,46 +251,50 @@
                                 'dibatalkan' => 'background: #f8d7da; color: #721c24;',
                                 default => 'background: #666; color: white;',
                             };
-                        @endphp
+                        ?>
                         <tr style="border-bottom: 1px solid #f0f0f0;">
                             <td style="padding: 12px;">
-                                <p style="font-size: 14px; color: #222; font-weight: 600; margin: 0;">{{ $pesan->penyewa->nama_lengkap }}</p>
-                                <p style="font-size: 12px; color: #999; margin: 3px 0 0;">{{ $pesan->penyewa->email }}</p>
+                                <p style="font-size: 14px; color: #222; font-weight: 600; margin: 0;"><?php echo e($pesan->penyewa->nama_lengkap); ?></p>
+                                <p style="font-size: 12px; color: #999; margin: 3px 0 0;"><?php echo e($pesan->penyewa->email); ?></p>
                             </td>
                             <td style="padding: 12px;">
-                                <p style="font-size: 14px; color: #222; font-weight: 600; margin: 0;">{{ $pesan->kamar->kost->nama_kost }}</p>
-                                <p style="font-size: 12px; color: #999; margin: 3px 0 0;">Kamar {{ $pesan->kamar->nomor_kamar }}</p>
+                                <p style="font-size: 14px; color: #222; font-weight: 600; margin: 0;"><?php echo e($pesan->kamar->kost->nama_kost); ?></p>
+                                <p style="font-size: 12px; color: #999; margin: 3px 0 0;">Kamar <?php echo e($pesan->kamar->nomor_kamar); ?></p>
                             </td>
                             <td style="padding: 12px;">
-                                <p style="font-size: 13px; color: #666; margin: 0;">{{ $pesan->tgl_mulai->format('d M Y') }}</p>
+                                <p style="font-size: 13px; color: #666; margin: 0;"><?php echo e($pesan->tgl_mulai->format('d M Y')); ?></p>
                             </td>
                             <td style="padding: 12px;">
-                                <span style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; {{ $statusBadge }}">
-                                    {{ ucfirst(str_replace('_', ' ', $pesan->status_pesan)) }}
+                                <span style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; <?php echo e($statusBadge); ?>">
+                                    <?php echo e(ucfirst(str_replace('_', ' ', $pesan->status_pesan))); ?>
+
                                 </span>
                             </td>
                             <td style="padding: 12px;">
-                                @if($latestPayment)
-                                    <span style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; {{ $paymentBadge }}">
-                                        {{ ucfirst($paymentStatus) }}
+                                <?php if($latestPayment): ?>
+                                    <span style="padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; <?php echo e($paymentBadge); ?>">
+                                        <?php echo e(ucfirst($paymentStatus)); ?>
+
                                     </span>
-                                @else
+                                <?php else: ?>
                                     <span style="font-size: 12px; color: #999;">-</span>
-                                @endif
+                                <?php endif; ?>
                             </td>
                         </tr>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </tbody>
             </table>
         </div>
 
         <div style="margin-top: 20px; text-align: right;">
-            <a href="{{ route('pesan.owner.index') }}" style="display: inline-block; padding: 10px 24px; background: #970747; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; transition: background 0.2s;"
+            <a href="<?php echo e(route('pesan.owner.index')); ?>" style="display: inline-block; padding: 10px 24px; background: #970747; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; transition: background 0.2s;"
                onmouseover="this.style.background='#c41e6a'" onmouseout="this.style.background='#970747'">
                 Lihat Semua Pemesanan →
             </a>
         </div>
     </div>
-    @endif
+    <?php endif; ?>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\laravel-sewaan-kost\resources\views/dashboard/pemilik.blade.php ENDPATH**/ ?>

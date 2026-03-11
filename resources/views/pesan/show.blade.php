@@ -97,26 +97,30 @@
                 @foreach ($pesan->payments as $payment)
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid {{ $payment->statusBadge }};">
                         <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
-                            <div>
+                            <div style="flex: 1;">
                                 <p style="font-size: 14px; color: #222; font-weight: 600; margin-bottom: 5px;">
-                                    {{ $payment->jenisPembayaranLabel }} - {{ $payment->formattedJumlahBayar }}
+                                    {{ $payment->payment_type ? ucfirst(str_replace('_', ' ', $payment->payment_type)) : 'Pembayaran' }} - Rp {{ number_format($payment->jumlah_bayar, 0, ',', '.') }}
                                 </p>
                                 <p style="font-size: 12px; color: #666;">
-                                    Tanggal: {{ $payment->tanggal_bayar->format('d M Y') }} | 
-                                    Status: {{ $payment->statusLabel }}
+                                    Order ID: {{ $payment->order_id ?? '-' }} |
+                                    Status: {{ $payment->transaction_status_label }}
                                 </p>
+                                @if ($payment->transaction_id)
+                                    <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                                        Transaction ID: {{ $payment->transaction_id }}
+                                    </p>
+                                @endif
                                 @if ($payment->catatan_verifikasi)
                                     <p style="font-size: 12px; color: #666; margin-top: 5px;">
                                         Catatan: {{ $payment->catatan_verifikasi }}
                                     </p>
                                 @endif
                             </div>
-                            @if ($payment->bukti_pembayaran)
-                                <a href="{{ asset('storage/' . $payment->bukti_pembayaran) }}" target="_blank" 
-                                   style="padding: 8px 16px; background: #970747; color: white; text-decoration: none; border-radius: 6px; font-size: 12px; font-weight: 600;">
-                                    👁️ Lihat Bukti
-                                </a>
-                            @endif
+                            <div style="text-align: right;">
+                                <span style="display: inline-block; padding: 6px 12px; background: {{ $payment->statusBadge }}; color: white; border-radius: 6px; font-size: 12px; font-weight: 600;">
+                                    {{ $payment->statusLabel }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -128,12 +132,12 @@
             <a href="{{ route('pesan.index') }}" class="btn" style="background: #6c757d;">
                 ← Kembali
             </a>
-            
+
             @if ($pesan->isPendingPayment())
-                <a href="{{ route('pesan.upload-payment', $pesan->id_pesan) }}" class="btn" style="background: #43e97b;">
-                    💳 Upload Pembayaran
+                <a href="{{ route('midtrans.pay', $pesan->id_pesan) }}" class="btn" style="background: #43e97b;">
+                    💳 Bayar via Midtrans
                 </a>
-                <form action="{{ route('pesan.cancel', $pesan->id_pesan) }}" method="POST" style="display: inline;" 
+                <form action="{{ route('pesan.cancel', $pesan->id_pesan) }}" method="POST" style="display: inline;"
                       onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pemesanan?')">
                     @csrf
                     @method('PATCH')
@@ -144,7 +148,7 @@
             @endif
 
             @if ($pesan->kamar->kost->pemilik->no_hp)
-                <a href="https://wa.me/{{ $pesan->kamar->kost->pemilik->no_hp }}?text=Halo, saya {{ $pesan->penyewa->nama_lengkap }} ingin konfirmasi pemesanan Kamar {{ $pesan->kamar->nomor_kamar }} di {{ $pesan->kamar->kost->nama_kost }}" 
+                <a href="https://wa.me/{{ $pesan->kamar->kost->pemilik->no_hp }}?text=Halo, saya {{ $pesan->penyewa->nama_lengkap }} ingin konfirmasi pemesanan Kamar {{ $pesan->kamar->nomor_kamar }} di {{ $pesan->kamar->kost->nama_kost }}"
                    target="_blank"
                    class="btn" style="background: #25D366;">
                     💬 Hubungi Pemilik

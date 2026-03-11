@@ -100,56 +100,28 @@
                                 <strong>Payment Type:</strong> {{ $payment->payment_type }}
                             </p>
                         @endif
+                        @if ($payment->transaction_status)
+                            <p style="font-size: 11px; color: #1565C0; margin: 5px 0 0; font-family: monospace;">
+                                <strong>Transaction Status:</strong> {{ $payment->transaction_status }}
+                            </p>
+                        @endif
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('pesan.owner.process-verification', $payment->id_pembayaran) }}">
-                    @csrf
-                    <input type="hidden" name="id_pesan" value="{{ $pesan->id_pesan }}">
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; color: #222; font-weight: 600; margin-bottom: 8px; font-size: 13px;">
-                            Status Verifikasi *
-                        </label>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <label style="background: #d4edda; border: 2px solid #28a745; border-radius: 8px; padding: 12px; cursor: pointer; text-align: center;">
-                                <input type="radio" name="status_verifikasi" value="diverifikasi" required 
-                                       style="margin-bottom: 5px;">
-                                <div style="font-size: 14px; font-weight: 600; color: #155724;">✅ Diverifikasi</div>
-                                <div style="font-size: 11px; color: #155724;">Terima pembayaran</div>
-                            </label>
-                            <label style="background: #f8d7da; border: 2px solid #dc3545; border-radius: 8px; padding: 12px; cursor: pointer; text-align: center;">
-                                <input type="radio" name="status_verifikasi" value="ditolak" required 
-                                       style="margin-bottom: 5px;">
-                                <div style="font-size: 14px; font-weight: 600; color: #721c24;">❌ Ditolak</div>
-                                <div style="font-size: 11px; color: #721c24;">Tolak pembayaran</div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="catatan_verifikasi">Catatan Verifikasi (Opsional)</label>
-                        <textarea id="catatan_verifikasi" name="catatan_verifikasi" rows="3" 
-                                  placeholder="Contoh: Pembayaran telah diterima dengan baik."></textarea>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="submit" class="btn" style="flex: 1;">
-                            💾 Simpan Verifikasi
-                        </button>
-                        <a href="{{ route('pesan.owner.show', $pesan->id_pesan) }}" 
-                           class="btn" style="background: #6c757d; min-width: 100px; text-align: center;">
-                            Batal
-                        </a>
-                    </div>
-                </form>
+                <div style="background: #fff3cd; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                    <p style="font-size: 13px; color: #856404; margin: 0;">
+                        ℹ️ <strong>Info:</strong> Pembayaran melalui Midtrans akan diverifikasi otomatis oleh sistem. 
+                        Status pembayaran akan berubah menjadi <strong>"Settlement (Berhasil)"</strong> setelah pembayaran selesai.
+                    </p>
+                </div>
             </div>
         @endforeach
 
         <!-- Info Box -->
-        <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3;">
+        <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3; margin-top: 20px;">
             <p style="font-size: 13px; color: #1565C0; margin: 0;">
-                ℹ️ <strong>Catatan:</strong> Setelah diverifikasi, status pemesanan akan berubah menjadi "Aktif" dan status kamar akan berubah menjadi "Terisi".
+                ℹ️ <strong>Catatan:</strong> Pembayaran melalui Midtrans akan diverifikasi otomatis oleh sistem. 
+                Setelah pembayaran berhasil (status: settlement), status pemesanan akan berubah menjadi "Aktif" dan status kamar akan berubah menjadi "Terisi".
             </p>
         </div>
     </div>

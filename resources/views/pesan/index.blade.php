@@ -79,10 +79,10 @@
                         <a href="{{ route('pesan.show', $pesan->id_pesan) }}" class="btn" style="min-width: 120px; padding: 10px 16px; font-size: 13px;">
                             👁️ Detail
                         </a>
-                        
+
                         @if ($pesan->isPendingPayment())
-                            <a href="{{ route('pesan.upload-payment', $pesan->id_pesan) }}" class="btn" style="background: #43e97b; min-width: 150px; padding: 10px 16px; font-size: 13px;">
-                                💳 Upload Pembayaran
+                            <a href="{{ route('midtrans.pay', $pesan->id_pesan) }}" class="btn" style="background: #43e97b; min-width: 150px; padding: 10px 16px; font-size: 13px;">
+                                💳 Bayar via Midtrans
                             </a>
                             <form action="{{ route('pesan.cancel', $pesan->id_pesan) }}" method="POST" style="display: inline;" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pemesanan?')">
                                 @csrf

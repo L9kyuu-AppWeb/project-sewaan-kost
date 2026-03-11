@@ -129,8 +129,8 @@ class PesanController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        // Can only cancel if status is menunggu_pembayaran or proses_verifikasi
-        if (!in_array($pesan->status_pesan, [Pesan::STATUS_MENUNGGU_PEMBAYARAN, Pesan::STATUS_PROSES_VERIFIKASI])) {
+        // Can only cancel if status is menunggu_pembayaran
+        if ($pesan->status_pesan !== Pesan::STATUS_MENUNGGU_PEMBAYARAN) {
             return back()->with('error', 'Pemesanan tidak dapat dibatalkan.');
         }
 
@@ -138,6 +138,12 @@ class PesanController extends Controller
         try {
             $pesan->status_pesan = Pesan::STATUS_DIBATALKAN;
             $pesan->save();
+
+            // Update kamar status back to tersedia
+            if ($pesan->kamar) {
+                $pesan->kamar->status_kamar = 'tersedia';
+                $pesan->kamar->save();
+            }
 
             DB::commit();
 
@@ -147,71 +153,5 @@ class PesanController extends Controller
             DB::rollBack();
             return back()->with('error', 'Gagal membatalkan pemesanan. Silakan coba lagi.');
         }
-    }
-
-    /**
-     * Show upload payment proof form.
-     */
-    public function uploadPayment(Pesan $pesan)
-    {
-        // Only allow the penyewa who made the booking
-        if ($pesan->id_penyewa !== Auth::id()) {
-            abort(403, 'Unauthorized access.');
-        }
-
-        // Can only upload payment if status is menunggu_pembayaran
-        if ($pesan->status_pesan !== Pesan::STATUS_MENUNGGU_PEMBAYARAN) {
-            return redirect()->route('pesan.show', $pesan->id_pesan)
-                ->with('error', 'Pembayaran sudah diunggah atau sedang diverifikasi.');
-        }
-
-        return view('pesan.upload-payment', compact('pesan'));
-    }
-
-    /**
-     * Upload payment proof.
-     */
-    public function storePayment(Request $request, Pesan $pesan)
-    {
-        // Only allow the penyewa who made the booking
-        if ($pesan->id_penyewa !== Auth::id()) {
-            abort(403, 'Unauthorized access.');
-        }
-
-        // Can only upload payment if status is menunggu_pembayaran
-        if ($pesan->status_pesan !== Pesan::STATUS_MENUNGGU_PEMBAYARAN) {
-            return redirect()->route('pesan.show', $pesan->id_pesan)
-                ->with('error', 'Pembayaran sudah diunggah atau sedang diverifikasi.');
-        }
-
-        $validated = $request->validate([
-            'jenis_pembayaran' => 'required|in:transfer_bank,ewallet,tunai',
-            'nama_bank' => 'required_if:jenis_pembayaran,transfer_bank|string|max:50',
-            'nomor_rekening' => 'required_if:jenis_pembayaran,transfer_bank|string|max:50',
-            'jumlah_bayar' => 'required|numeric|min:0',
-            'tanggal_bayar' => 'required|date|before_or_equal:today',
-            'bukti_pembayaran' => 'required|image|max:2048',
-        ]);
-
-        // Handle photo upload
-        $buktiPath = $request->file('bukti_pembayaran')->store('pembayaran', 'public');
-
-        // Create payment record
-        $pesan->payments()->create([
-            'jenis_pembayaran' => $validated['jenis_pembayaran'],
-            'nama_bank' => $validated['nama_bank'] ?? null,
-            'nomor_rekening' => $validated['nomor_rekening'] ?? null,
-            'bukti_pembayaran' => $buktiPath,
-            'jumlah_bayar' => $validated['jumlah_bayar'],
-            'tanggal_bayar' => $validated['tanggal_bayar'],
-            'status_verifikasi' => Pembayaran::STATUS_PENDING,
-        ]);
-
-        // Update pesan status to proses_verifikasi
-        $pesan->status_pesan = Pesan::STATUS_PROSES_VERIFIKASI;
-        $pesan->save();
-
-        return redirect()->route('pesan.show', $pesan->id_pesan)
-            ->with('success', 'Bukti pembayaran berhasil diunggah! Menunggu verifikasi pemilik.');
     }
 }

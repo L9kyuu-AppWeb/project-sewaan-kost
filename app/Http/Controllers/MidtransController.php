@@ -106,18 +106,31 @@ class MidtransController extends Controller
                 ->with('error', 'Pembayaran sudah diproses atau tidak tersedia.');
         }
 
-        // Get or create payment record
-        $pembayaran = $pesan->payments()->whereNull('transaction_id')->latest('id_pembayaran')->first();
+        // Get or create payment record - REUSE existing pending payment
+        $pembayaran = $pesan->payments()
+            ->where('transaction_status', 'pending')
+            ->latest('id_pembayaran')
+            ->first();
 
         if (!$pembayaran) {
-            // Create new payment record
+            // Create new payment record only if no pending payment exists
             $pembayaran = $pesan->payments()->create([
                 'order_id' => 'PESAN-' . $pesan->id_pesan . '-' . time(),
                 'jenis_pembayaran' => 'transfer_bank',
                 'jumlah_bayar' => $pesan->total_harga,
                 'tanggal_bayar' => now(),
-                'status_verifikasi' => 'pending',
                 'transaction_status' => 'pending',
+            ]);
+
+            \Log::info('New payment record created', [
+                'pembayaran_id' => $pembayaran->id_pembayaran,
+                'order_id' => $pembayaran->order_id,
+            ]);
+        } else {
+            \Log::info('Reusing existing pending payment', [
+                'pembayaran_id' => $pembayaran->id_pembayaran,
+                'order_id' => $pembayaran->order_id,
+                'transaction_status' => $pembayaran->transaction_status,
             ]);
         }
 
@@ -125,8 +138,14 @@ class MidtransController extends Controller
         $snapToken = $pembayaran->generateSnapToken();
 
         if (!$snapToken) {
-            return redirect()->route('pesan.show', $pesan->id_pesan)
-                ->with('error', 'Gagal menghasilkan token pembayaran. Silakan hubungi admin.');
+            \Log::error('Failed to generate Snap Token for payment', [
+                'pembayaran_id' => $pembayaran->id_pembayaran,
+                'order_id' => $pembayaran->order_id,
+                'pesan_id' => $pesan->id_pesan,
+            ]);
+
+            // Don't redirect, show the page with error message
+            return view('pesan.midtrans-pay', compact('pesan', 'pembayaran', 'snapToken'));
         }
 
         return view('pesan.midtrans-pay', compact('pesan', 'pembayaran', 'snapToken'));
@@ -137,7 +156,67 @@ class MidtransController extends Controller
      */
     public function success(Pesan $pesan)
     {
-        return view('pesan.midtrans-success', compact('pesan'));
+        // Get latest payment
+        $pembayaran = $pesan->payments()->latest('id_pembayaran')->first();
+        
+        $paymentStatus = 'pending';
+        $shouldUpdateStatus = false;
+
+        if ($pembayaran && $pembayaran->transaction_status !== 'settlement') {
+            // Try to get transaction status from Midtrans API
+            try {
+                \Midtrans\Config::$serverKey = config('midtrans.server_key');
+                \Midtrans\Config::$isProduction = config('midtrans.is_production');
+
+                if (config('midtrans.skip_ssl_verification')) {
+                    \Midtrans\Config::$curlOptions = [
+                        CURLOPT_SSL_VERIFYPEER => false,
+                        CURLOPT_SSL_VERIFYHOST => 0,
+                    ];
+                }
+
+                $status = \Midtrans\Transaction::status($pembayaran->order_id);
+
+                if (isset($status->transaction_status)) {
+                    $paymentStatus = $status->transaction_status;
+                    
+                    // Only update if status changed
+                    if ($status->transaction_status !== $pembayaran->transaction_status) {
+                        $shouldUpdateStatus = true;
+                        
+                        // Update payment with new status
+                        $notificationData = [
+                            'status_code' => '200',
+                            'transaction_id' => $status->transaction_id ?? '',
+                            'order_id' => $pembayaran->order_id,
+                            'gross_amount' => $status->gross_amount ?? '',
+                            'payment_type' => $status->payment_type ?? '',
+                            'transaction_status' => $status->transaction_status,
+                            'transaction_time' => $status->transaction_time ?? null,
+                            'settlement_time' => $status->settlement_time ?? null,
+                            'signature_key' => 'api-check-skip-verification',
+                        ];
+
+                        $pembayaran->handleCallback($notificationData);
+                    }
+
+                    \Log::info('Payment status checked from Midtrans API', [
+                        'order_id' => $pembayaran->order_id,
+                        'transaction_status' => $status->transaction_status,
+                        'updated' => $shouldUpdateStatus,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error checking Midtrans transaction status: ' . $e->getMessage());
+            }
+        } elseif ($pembayaran) {
+            $paymentStatus = $pembayaran->transaction_status;
+        }
+
+        // Refresh pesan status
+        $pesan->refresh();
+
+        return view('pesan.midtrans-success', compact('pesan', 'pembayaran', 'paymentStatus'));
     }
 
     /**

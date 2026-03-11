@@ -1,22 +1,39 @@
-saya ingin update modul pembayaran :
-    id_bayar	INT	PK, AI	ID unik internal sistem.
-    id_pesan	INT	FK, Not Null	Relasi ke pemesanan.id_pesan.
-    order_id	VARCHAR(50)	Unique	ID pesanan yang dikirim ke Midtrans (biasanya gabungan ID Pesan + Timestamp).
-    transaction_id	VARCHAR(100)	Nullable	ID Transaksi resmi dari pihak Midtrans.
-    gross_amount	DECIMAL(15,2)	Not Null	Nominal pembayaran.
-    payment_type	VARCHAR(50)	Nullable	Otomatis terisi (e-wallet, bank_transfer, dll).
-    transaction_status	VARCHAR(20)	Not Null	Status dari Midtrans: pending, settlement, expire, cancel.
-    snap_token	VARCHAR(255)	Nullable	Token untuk memunculkan pop-up pembayaran Midtrans.
-    updated_at	TIMESTAMP	DEFAULT NOW()	Waktu terakhir status berubah.
+1. Struktur Tabel: makanan
+    Nama Kolom	Tipe Data	Atribut	Deskripsi
+    id_makanan	INT	PK, AI	ID unik menu makanan.
+    id_kost	INT	FK, Not Null	Relasi ke kost.id_kost (Menu ini tersedia di kost mana).
+    nama_makanan	VARCHAR(100)	Not Null	Nama hidangan (contoh: Nasi Goreng Spesial).
+    harga	DECIMAL(15,2)	Not Null	Harga per porsi di kost tersebut.
+    stok	INT	Default 0	Jumlah porsi yang tersedia hari ini.
+    is_available	BOOLEAN	Default TRUE	Switch On/Off (Tampilkan/Sembunyikan menu).
+    foto_makanan	VARCHAR(255)	Nullable	Link gambar makanan agar lebih menarik.
 
-Logika Integrasi Midtrans
+2. Hak Akses (Role Permissions)
+    Pembagian akses ini memastikan integritas data agar penyewa tidak bisa mengubah harga dan pemilik bisa mengelola bisnisnya dengan efisien.
 
-    Checkout: Saat penyewa klik "Bayar", sistem Anda memanggil API Midtrans untuk mendapatkan snap_token. Simpan token ini di tabel.
+    A. Role: Pemilik Kost (Admin)
+    Pemilik memiliki kendali penuh terhadap suplai dan manajemen menu.
+        Create: Menambah menu baru untuk kost miliknya.
+        Read: Melihat semua daftar menu dan laporan penjualan makanan.
+        Update: * Mengubah harga jika ada kenaikan bahan baku.
+            Mengupdate jumlah stok harian.
+            Mengubah is_available menjadi FALSE jika menu sudah habis atau dapur tutup.
+        Delete: Menghapus menu yang sudah tidak ingin dijual lagi.
 
-    Payment: Penyewa membayar melalui UI Midtrans (GoPay, VA Bank, dll).
+    B. Role: Penyewa
+    Penyewa hanya memiliki akses pada sisi permintaan (demand).
+        Create: Tidak bisa menambah menu. Penyewa hanya bisa membuat Pesanan (di tabel pesanan_makan).
+        Read: * Hanya bisa melihat menu yang memiliki id_kost yang sama dengan tempat tinggalnya.
+            Hanya bisa melihat menu yang is_available = TRUE dan stok > 0.
+        Update: Tidak bisa mengubah data di tabel makanan.
+        Delete: Tidak bisa menghapus data di tabel makanan.
 
-    Notification (Webhook): Midtrans akan mengirimkan data JSON ke URL server Anda (Notification URL).
+untuk menu di role pemilik :
+    Kelola ->
+        Kamar
+        Makanan
 
-        Jika status settlement, sistem Anda otomatis mengubah transaction_status di tabel ini dan mengubah status_pesan di tabel pemesanan menjadi 'aktif'.
-
-        Jika status expire atau cancel, sistem otomatis membuka kembali status kamar menjadi 'tersedia'.
+untuk menu di role Penyewa :
+    Cari ->
+        Kost
+        Makanan

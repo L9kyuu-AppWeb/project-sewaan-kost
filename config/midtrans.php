@@ -11,17 +11,22 @@ return [
     */
 
     // Midtrans Server Key (from dashboard)
-    'server_key' => env('MIDTRANS_SERVER_KEY', 'SB-Mid-server-xxx'),
+    // Hardcoded to avoid system environment variable conflict
+    'server_key' => 'SB-Mid-server-CxzQIML-OHfc5Q7TUdL07A8k',
 
     // Midtrans Client Key (from dashboard)
-    'client_key' => env('MIDTRANS_CLIENT_KEY', 'SB-Mid-client-xxx'),
+    'client_key' => 'SB-Mid-client-p5wUnL5zYKds3E-A',
 
     // Midtrans Environment (production or sandbox)
-    'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+    'is_production' => false,
 
     // Enable 3DS Secure for credit card transactions
-    'is_3ds' => env('MIDTRANS_IS_3DS', true),
+    'is_3ds' => true,
 
     // Callback URL for Midtrans notifications
-    'callback_url' => env('MIDTRANS_CALLBACK_URL', 'https://laravel-sewaan-kost.test/api/midtrans/callback'),
+    // Use your ngrok URL without project path (e.g., https://abc123.ngrok-free.app/api/midtrans/callback)
+    'callback_url' => env('MIDTRANS_CALLBACK_URL', 'https://assuring-quail-real.ngrok-free.app/laravel-sewaan-kost/public/api/midtrans/callback'),
+
+    // Skip SSL verification for development (set to true if having SSL certificate issues)
+    'skip_ssl_verification' => true,
 ];

@@ -17,6 +17,22 @@
             <p style="color: #666; font-size: 14px;">Selesaikan pembayaran Anda dengan aman</p>
         </div>
 
+        @if(empty($snapToken))
+            <div style="background: #f8d7da; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #dc3545;">
+                <h3 style="font-size: 16px; color: #721c24; margin-bottom: 10px;">⚠️ Gagal Menghasilkan Token Pembayaran</h3>
+                <p style="color: #721c24; margin-bottom: 10px;">
+                    Terjadi kesalahan saat mempersiapkan pembayaran. Silakan coba lagi atau hubungi admin jika masalah berlanjut.
+                </p>
+                <p style="color: #721c24; font-size: 12px; margin-bottom: 10px;">
+                    <strong>Order ID:</strong> {{ $pembayaran->order_id ?? 'N/A' }}<br>
+                    <strong>Amount:</strong> {{ $pembayaran->jumlah_bayar ?? 'N/A' }}
+                </p>
+                <a href="{{ route('pesan.show', $pesan->id_pesan) }}" style="color: #721c24; text-decoration: underline; font-size: 13px;">
+                    ← Kembali ke detail pemesanan
+                </a>
+            </div>
+        @endif
+
         <!-- Debug Info -->
         @if(app()->environment('local'))
             <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 11px; font-family: monospace;">
@@ -86,17 +102,19 @@
             </p>
         </div>
 
-        <!-- Pay Button -->
-        <button id="pay-button" style="width: 100%; padding: 16px; background: linear-gradient(135deg, #970747 0%, #c41e6a 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
-                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 20px rgba(151,7,71,0.4)'"
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-            🔒 Bayar Sekarang
-        </button>
+        @if(!empty($snapToken))
+            <!-- Pay Button -->
+            <button id="pay-button" style="width: 100%; padding: 16px; background: linear-gradient(135deg, #970747 0%, #c41e6a 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 20px rgba(151,7,71,0.4)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                🔒 Bayar Sekarang
+            </button>
+        @endif
 
         @if(config('midtrans.server_key') === 'SB-Mid-server-xxx' || config('midtrans.server_key') === 'SB-Mid-server-test')
             <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #ffc107;">
                 <p style="font-size: 13px; color: #856404; margin: 0;">
-                    ⚠️ <strong>Perhatian:</strong> Midtrans Server Key belum dikonfigurasi dengan benar. 
+                    ⚠️ <strong>Perhatian:</strong> Midtrans Server Key belum dikonfigurasi dengan benar.
                     Silakan update <code>.env</code> dengan credentials dari Midtrans Dashboard.
                 </p>
                 <p style="font-size: 11px; color: #856404; margin-top: 5px;">
@@ -113,47 +131,50 @@
     </div>
 </div>
 
-<!-- Midtrans Snap JS -->
-<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
-<script type="text/javascript">
-    // Debug: Log snap token
-    console.log('Snap Token:', '{{ $snapToken }}');
-    console.log('Client Key:', '{{ config('midtrans.client_key') }}');
-    
-    document.getElementById('pay-button').onclick = function () {
-        // Snap Token from server
-        const snapToken = '{{ $snapToken }}';
-        
-        console.log('Payment button clicked, token:', snapToken);
-        
-        if (!snapToken || snapToken === '') {
-            alert('Error: Snap token tidak valid. Silakan hubungi admin.');
-            return;
-        }
-        
-        // Snap popup
-        snap.pay(snapToken, {
-            onSuccess: function(result) {
-                // Payment success
-                console.log('Payment success:', result);
-                window.location.href = '{{ route("midtrans.success", $pesan->id_pesan) }}';
-            },
-            onPending: function(result) {
-                // Payment pending (for some payment methods)
-                console.log('Payment pending:', result);
-                window.location.href = '{{ route("pesan.show", $pesan->id_pesan) }}';
-            },
-            onError: function(result) {
-                // Payment error
-                console.log('Payment error:', result);
-                window.location.href = '{{ route("midtrans.failed", $pesan->id_pesan) }}';
-            },
-            onClose: function() {
-                // User closed popup without paying
-                console.log('User closed payment popup');
-                alert('Anda menutup popup pembayaran. Silakan klik tombol "Bayar Sekarang" untuk mencoba lagi.');
+@if(!empty($snapToken))
+    <!-- Midtrans Snap JS -->
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
+    <script type="text/javascript">
+        // Debug: Log snap token
+        console.log('Snap Token:', '{{ $snapToken }}');
+        console.log('Client Key:', '{{ config('midtrans.client_key') }}');
+
+        document.getElementById('pay-button').onclick = function () {
+            // Snap Token from server
+            const snapToken = '{{ $snapToken }}';
+
+            console.log('Payment button clicked, token:', snapToken);
+
+            if (!snapToken || snapToken === '') {
+                alert('Error: Snap token tidak valid. Silakan hubungi admin.');
+                return;
             }
-        });
-    };
-</script>
+
+            // Snap popup
+            snap.pay(snapToken, {
+                onSuccess: function(result) {
+                    // Payment success
+                    console.log('Payment success:', result);
+                    window.location.href = '{{ route("midtrans.success", $pesan->id_pesan) }}';
+                },
+                onPending: function(result) {
+                    // Payment pending (for some payment methods)
+                    console.log('Payment pending:', result);
+                    window.location.href = '{{ route("midtrans.success", $pesan->id_pesan) }}';
+                },
+                onError: function(result) {
+                    // Payment error
+                    console.log('Payment error:', result);
+                    alert('Terjadi kesalahan pada pembayaran. Silakan coba lagi atau gunakan metode pembayaran lain.');
+                },
+                onClose: function() {
+                    // User closed popup without paying
+                    console.log('User closed payment popup');
+                    // Don't redirect, let user stay on payment page
+                    alert('Pembayaran dibatalkan. Anda dapat mencoba lagi kapan saja sebelum batas waktu pembayaran.');
+                }
+            });
+        };
+    </script>
+@endif
 @endsection

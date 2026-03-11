@@ -52,18 +52,15 @@ class PesanOwnerController extends Controller
             'menunggu_pembayaran' => Pesan::whereHas('kamar.kost', function ($q) use ($user) {
                 $q->where('id_pemilik', $user->id_user);
             })->where('status_pesan', Pesan::STATUS_MENUNGGU_PEMBAYARAN)->count(),
-            'proses_verifikasi' => Pesan::whereHas('kamar.kost', function ($q) use ($user) {
-                $q->where('id_pemilik', $user->id_user);
-            })->where('status_pesan', Pesan::STATUS_PROSES_VERIFIKASI)->count(),
             'aktif' => Pesan::whereHas('kamar.kost', function ($q) use ($user) {
                 $q->where('id_pemilik', $user->id_user);
             })->where('status_pesan', Pesan::STATUS_AKTIF)->count(),
             'pending_payments' => Pembayaran::whereHas('pesan.kamar.kost', function ($q) use ($user) {
                 $q->where('id_pemilik', $user->id_user);
-            })->where('status_verifikasi', Pembayaran::STATUS_PENDING)->count(),
+            })->where('transaction_status', 'pending')->count(),
         ];
 
-        return view('pesan.owner.index', compact('pesanans', 'kosts', 'stats'));
+        return view('pesan.owner.index', compact('pesanans', 'stats'));
     }
 
     /**
@@ -87,81 +84,6 @@ class PesanOwnerController extends Controller
         $pesan->load(['penyewa', 'kamar.kost', 'payments.verifiedBy']);
 
         return view('pesan.owner.show', compact('pesan', 'kost'));
-    }
-
-    /**
-     * Show payment verification form.
-     */
-    public function verifyPayment(Pesan $pesan)
-    {
-        $user = Auth::user();
-
-        // Verify owner has access to this booking
-        $kost = Kost::where('id_pemilik', $user->id_user)
-            ->whereHas('rooms', function ($q) use ($pesan) {
-                $q->where('id_kamar', $pesan->id_kamar);
-            })
-            ->first();
-
-        if (!$kost) {
-            abort(403, 'Unauthorized access.');
-        }
-
-        // Get pending payments
-        $pendingPayments = $pesan->payments()->where('status_verifikasi', Pembayaran::STATUS_PENDING)->get();
-
-        if ($pendingPayments->isEmpty()) {
-            return redirect()->route('pesan.owner.show', $pesan->id_pesan)
-                ->with('error', 'Tidak ada pembayaran yang perlu diverifikasi.');
-        }
-
-        return view('pesan.owner.verify-payment', compact('pesan', 'pendingPayments'));
-    }
-
-    /**
-     * Verify payment.
-     */
-    public function processVerification(Request $request, Pembayaran $pembayaran)
-    {
-        $user = Auth::user();
-        
-        $validated = $request->validate([
-            'status_verifikasi' => 'required|in:diverifikasi,ditolak',
-            'catatan_verifikasi' => 'nullable|string|max:500',
-        ]);
-
-        // Verify owner has access to this payment
-        $pembayaran->load('pesan.kamar.kost');
-        $kost = $pembayaran->pesan->kamar->kost;
-
-        if ($kost->id_pemilik !== $user->id_user) {
-            abort(403, 'Unauthorized access.');
-        }
-
-        DB::beginTransaction();
-        try {
-            $pembayaran->status_verifikasi = $validated['status_verifikasi'];
-            $pembayaran->catatan_verifikasi = $validated['catatan_verifikasi'] ?? null;
-            $pembayaran->verified_by = $user->id_user;
-            $pembayaran->verified_at = now();
-            $pembayaran->save();
-
-            // If verified, update pesan status to aktif
-            if ($validated['status_verifikasi'] === 'diverifikasi') {
-                $pembayaran->pesan->status_pesan = Pesan::STATUS_AKTIF;
-                $pembayaran->pesan->kamar->status_kamar = 'terisi';
-                $pembayaran->pesan->kamar->save();
-                $pembayaran->pesan->save();
-            }
-
-            DB::commit();
-
-            return redirect()->route('pesan.owner.show', $pembayaran->pesan->id_pesan)
-                ->with('success', 'Verifikasi pembayaran berhasil.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Gagal memverifikasi pembayaran. Silakan coba lagi.');
-        }
     }
 
     /**
@@ -276,7 +198,7 @@ class PesanOwnerController extends Controller
 
             'pending_payments' => Pembayaran::whereHas('pesan.kamar.kost', function ($q) use ($user) {
                 $q->where('id_pemilik', $user->id_user);
-            })->where('status_verifikasi', Pembayaran::STATUS_PENDING)->count(),
+            })->where('transaction_status', 'pending')->count(),
         ];
 
         return response()->json($stats);

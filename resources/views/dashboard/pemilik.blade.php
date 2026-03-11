@@ -66,97 +66,97 @@
             💰 Statistik Pendapatan
         </h2>
 
+        {{-- TOTAL Revenue --}}
+        <div style="border: 2px solid #970747; border-radius: 12px; padding: 25px; background: linear-gradient(135deg, #fee6f0 0%, #fff5f8 100%); margin-bottom: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div>
+                    <p style="font-size: 14px; color: #970747; font-weight: 700; margin-bottom: 5px; text-transform: uppercase;">💎 Total Pendapatan (Semua Tipe)</p>
+                    <p style="font-size: 12px; color: #666; margin: 0;">Gabungan dari Kamar, Makanan, Galon, dan Laundry</p>
+                </div>
+                <span style="font-size: 42px;">🏆</span>
+            </div>
+            <p style="font-size: 36px; color: #970747; font-weight: 800; margin: 0;">
+                Rp {{ number_format($stats['pendapatan_total'] ?? 0, 0, ',', '.') }}
+            </p>
+            <div style="display: flex; gap: 20px; margin-top: 15px; flex-wrap: wrap;">
+                <p style="font-size: 13px; color: #666;">
+                    <strong>Bulan Ini:</strong> 
+                    <span style="color: #970747; font-weight: 600;">Rp {{ number_format($stats['pendapatan_bulan_ini'] ?? 0, 0, ',', '.') }}</span>
+                </p>
+                <p style="font-size: 13px; color: #666;">
+                    <strong>Tahun Ini:</strong> 
+                    <span style="color: #970747; font-weight: 600;">Rp {{ number_format($stats['pendapatan_tahun_ini'] ?? 0, 0, ',', '.') }}</span>
+                </p>
+            </div>
+        </div>
+
+        <h3 style="font-size: 16px; color: #333; margin-bottom: 15px; font-weight: 600;">📊 Berdasarkan Tipe Pembayaran</h3>
+
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-            {{-- Bulan Ini --}}
+            {{-- Kamar Revenue --}}
             <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                     <div>
-                        <p style="font-size: 13px; color: #666; margin-bottom: 5px;">📅 Bulan Ini</p>
-                        <p style="font-size: 12px; color: #999; margin: 0;">{{ now()->format('F Y') }}</p>
+                        <p style="font-size: 13px; color: #666; font-weight: 600; margin-bottom: 5px;">🏠 Sewa Kamar</p>
+                        <p style="font-size: 11px; color: #999; margin: 0;">Pendapatan dari sewa kamar kost</p>
                     </div>
-                    <span style="font-size: 32px;">💰</span>
+                    <span style="font-size: 32px;">🔑</span>
                 </div>
-                <p style="font-size: 28px; color: #333; font-weight: 700; margin: 0;">
-                    Rp {{ number_format($stats['pendapatan_bulan_ini'] ?? 0, 0, ',', '.') }}
+                <p style="font-size: 24px; color: #333; font-weight: 700; margin: 0;">
+                    Rp {{ number_format($stats['pendapatan_kamar_total'] ?? 0, 0, ',', '.') }}
                 </p>
-                <p style="font-size: 12px; color: #666; margin: 5px 0 0;">
-                    @php
-                        $prevMonth = now()->copy()->subMonth();
-                        $prevMonthRevenue = \App\Models\Pembayaran::whereHas('pesan.kamar.kost', function ($q) {
-                            $q->where('id_pemilik', auth()->id());
-                        })
-                            ->whereIn('transaction_status', ['settlement', 'capture'])
-                            ->whereYear('settlement_time', $prevMonth->year)
-                            ->whereMonth('settlement_time', $prevMonth->month)
-                            ->sum('jumlah_bayar');
-                        
-                        $currentRevenue = $stats['pendapatan_bulan_ini'] ?? 0;
-                        $growth = $prevMonthRevenue > 0 ? (($currentRevenue - $prevMonthRevenue) / $prevMonthRevenue) * 100 : 0;
-                    @endphp
-                    @if($growth > 0)
-                        <span style="color: #28a745;">↑ {{ number_format($growth, 1) }}%</span> dari bulan lalu
-                    @elseif($growth < 0)
-                        <span style="color: #dc3545;">↓ {{ number_format(abs($growth), 1) }}%</span> dari bulan lalu
-                    @else
-                        <span style="color: #666;">=</span> sama dengan bulan lalu
-                    @endif
-                </p>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <p style="font-size: 12px; color: #666; margin: 3px 0;">
+                        <strong>Bulan Ini:</strong> Rp {{ number_format($stats['pendapatan_kamar_bulan_ini'] ?? 0, 0, ',', '.') }}
+                    </p>
+                    <p style="font-size: 12px; color: #666; margin: 3px 0;">
+                        <strong>Tahun Ini:</strong> Rp {{ number_format($stats['pendapatan_kamar_tahun_ini'] ?? 0, 0, ',', '.') }}
+                    </p>
+                </div>
             </div>
 
-            {{-- Tahun Ini --}}
+            {{-- Makanan Revenue --}}
             <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                     <div>
-                        <p style="font-size: 13px; color: #666; margin-bottom: 5px;">📅 Tahun Ini</p>
-                        <p style="font-size: 12px; color: #999; margin: 0;">{{ now()->year }}</p>
+                        <p style="font-size: 13px; color: #666; font-weight: 600; margin-bottom: 5px;">🍽️ Makanan</p>
+                        <p style="font-size: 11px; color: #999; margin: 0;">Pendapatan dari pesanan makanan</p>
                     </div>
-                    <span style="font-size: 32px;">📈</span>
+                    <span style="font-size: 32px;">🍽️</span>
                 </div>
-                <p style="font-size: 28px; color: #333; font-weight: 700; margin: 0;">
-                    Rp {{ number_format($stats['pendapatan_tahun_ini'] ?? 0, 0, ',', '.') }}
+                <p style="font-size: 24px; color: #333; font-weight: 700; margin: 0;">
+                    Rp {{ number_format($stats['pendapatan_makanan_total'] ?? 0, 0, ',', '.') }}
                 </p>
-                <p style="font-size: 12px; color: #666; margin: 5px 0 0;">
-                    @php
-                        $prevYear = now()->copy()->subYear();
-                        $prevYearRevenue = \App\Models\Pembayaran::whereHas('pesan.kamar.kost', function ($q) {
-                            $q->where('id_pemilik', auth()->id());
-                        })
-                            ->whereIn('transaction_status', ['settlement', 'capture'])
-                            ->whereYear('settlement_time', $prevYear->year)
-                            ->sum('jumlah_bayar');
-                        
-                        $currentYearRevenue = $stats['pendapatan_tahun_ini'] ?? 0;
-                        $yearGrowth = $prevYearRevenue > 0 ? (($currentYearRevenue - $prevYearRevenue) / $prevYearRevenue) * 100 : 0;
-                    @endphp
-                    @if($yearGrowth > 0)
-                        <span style="color: #28a745;">↑ {{ number_format($yearGrowth, 1) }}%</span> dari tahun lalu
-                    @elseif($yearGrowth < 0)
-                        <span style="color: #dc3545;">↓ {{ number_format(abs($yearGrowth), 1) }}%</span> dari tahun lalu
-                    @else
-                        <span style="color: #666;">=</span> sama dengan tahun lalu
-                    @endif
-                </p>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <p style="font-size: 12px; color: #666; margin: 3px 0;">
+                        <strong>Bulan Ini:</strong> Rp {{ number_format($stats['pendapatan_makanan_bulan_ini'] ?? 0, 0, ',', '.') }}
+                    </p>
+                    <p style="font-size: 12px; color: #666; margin: 3px 0;">
+                        <strong>Tahun Ini:</strong> Rp {{ number_format($stats['pendapatan_makanan_tahun_ini'] ?? 0, 0, ',', '.') }}
+                    </p>
+                </div>
             </div>
 
-            {{-- Total Pendapatan --}}
+            {{-- Galon & Laundry Revenue --}}
             <div style="border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #96fbc4 0%, #f9f586 100%);">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                     <div>
-                        <p style="font-size: 13px; color: #666; margin-bottom: 5px;">💎 Total Pendapatan</p>
-                        <p style="font-size: 12px; color: #999; margin: 0;">Sejak awal</p>
+                        <p style="font-size: 13px; color: #666; font-weight: 600; margin-bottom: 5px;">💧 Galon & 👕 Laundry</p>
+                        <p style="font-size: 11px; color: #999; margin: 0;">Pendapatan dari layanan tambahan</p>
                     </div>
-                    <span style="font-size: 32px;">🏆</span>
+                    <span style="font-size: 32px;">🛒</span>
                 </div>
-                <p style="font-size: 28px; color: #333; font-weight: 700; margin: 0;">
-                    Rp {{ number_format($stats['pendapatan_total'] ?? 0, 0, ',', '.') }}
+                @php
+                    $galonLaundryTotal = ($stats['pendapatan_total'] ?? 0) - ($stats['pendapatan_kamar_total'] ?? 0) - ($stats['pendapatan_makanan_total'] ?? 0);
+                @endphp
+                <p style="font-size: 24px; color: #333; font-weight: 700; margin: 0;">
+                    Rp {{ number_format($galonLaundryTotal, 0, ',', '.') }}
                 </p>
-                <p style="font-size: 12px; color: #666; margin: 5px 0 0;">
-                    Dari {{ \App\Models\Pembayaran::whereHas('pesan.kamar.kost', function ($q) {
-                        $q->where('id_pemilik', auth()->id());
-                    })
-                        ->whereIn('transaction_status', ['settlement', 'capture'])
-                        ->count() }} pembayaran berhasil
-                </p>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <p style="font-size: 12px; color: #666; margin: 3px 0;">
+                        <strong>Termasuk:</strong> Galon, Laundry, dll
+                    </p>
+                </div>
             </div>
         </div>
     </div>

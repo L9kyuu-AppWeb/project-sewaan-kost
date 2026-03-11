@@ -31,6 +31,8 @@ class Pembayaran extends Model
      */
     protected $fillable = [
         'id_pesan',
+        'tipe_pembayaran',
+        'orderan_id',
         'jenis_pembayaran',
         'jumlah_bayar',
         'tanggal_bayar',
@@ -68,6 +70,13 @@ class Pembayaran extends Model
     {
         parent::boot();
 
+        // Auto-generate orderan_id when creating
+        static::creating(function ($pembayaran) {
+            if (empty($pembayaran->orderan_id)) {
+                $pembayaran->orderan_id = $pembayaran->generateOrderanId();
+            }
+        });
+
         static::updated(function ($pembayaran) {
             // Update pesan status when payment transaction_status changes to settlement
             if ($pembayaran->isDirty('transaction_status') &&
@@ -77,7 +86,7 @@ class Pembayaran extends Model
                 if ($pesan && in_array($pesan->status_pesan, [Pesan::STATUS_PROSES_VERIFIKASI, Pesan::STATUS_MENUNGGU_PEMBAYARAN])) {
                     $pesan->status_pesan = Pesan::STATUS_AKTIF;
                     $pesan->save();
-                    
+
                     // Update kamar status to terisi
                     if ($pesan->kamar && $pesan->kamar->status_kamar !== 'terisi') {
                         $pesan->kamar->status_kamar = 'terisi';
@@ -89,11 +98,40 @@ class Pembayaran extends Model
     }
 
     /**
-     * Get the pesan that owns this payment.
+     * Generate unique orderan_id based on payment type.
+     * Format: {TYPE}-{id_pesan/order_id}-{timestamp}{suffix}
+     * Examples: KAMAR-1-1773182971M, MAKANAN-1-1773182972, GALON-1-1773182973, LAUNDRY-1-1773182971
+     */
+    public function generateOrderanId(): string
+    {
+        $typePrefix = strtoupper($this->tipe_pembayaran ?? 'kamar');
+        $referenceId = $this->id_pesan ?? 0;
+        $timestamp = time();
+        $suffix = '';
+
+        // Add suffix based on type
+        if ($typePrefix === 'KAMAR') {
+            $suffix = 'M';
+        }
+
+        return "{$typePrefix}-{$referenceId}-{$timestamp}{$suffix}";
+    }
+
+    /**
+     * Get the pesan that owns this payment (for kamar payments).
      */
     public function pesan(): BelongsTo
     {
         return $this->belongsTo(Pesan::class, 'id_pesan', 'id_pesan');
+    }
+
+    /**
+     * Get the pesanan makanan that owns this payment (for food payments).
+     * Uses id_pesan field to store id_pesanan_makanan for food orders.
+     */
+    public function pesananMakanan(): BelongsTo
+    {
+        return $this->belongsTo(PesananMakananHeader::class, 'id_pesan', 'id_pesanan_makanan');
     }
 
     /**
@@ -110,6 +148,20 @@ class Pembayaran extends Model
     public function getFormattedJumlahBayarAttribute(): string
     {
         return 'Rp ' . number_format($this->jumlah_bayar, 0, ',', '.');
+    }
+
+    /**
+     * Get the order reference based on payment type.
+     */
+    public function getOrderReferenceAttribute(): string
+    {
+        return match($this->tipe_pembayaran) {
+            'kamar' => 'Kamar #' . ($this->pesan?->id_pesan ?? '-'),
+            'makanan' => 'Makanan #' . ($this->pesananMakanan?->id_order_makan ?? '-'),
+            'galon' => 'Galon #' . ($this->orderan_id ?? '-'),
+            'laundry' => 'Laundry #' . ($this->orderan_id ?? '-'),
+            default => '#'. ($this->orderan_id ?? '-'),
+        };
     }
 
     /**
@@ -152,6 +204,34 @@ class Pembayaran extends Model
             'ewallet' => 'E-Wallet',
             'tunai' => 'Tunai',
             default => 'Tidak Diketahui',
+        };
+    }
+
+    /**
+     * Get the payment type label.
+     */
+    public function getTipePembayaranLabelAttribute(): string
+    {
+        return match($this->tipe_pembayaran) {
+            'kamar' => 'Kamar',
+            'makanan' => 'Makanan',
+            'galon' => 'Galon',
+            'laundry' => 'Laundry',
+            default => 'Tidak Diketahui',
+        };
+    }
+
+    /**
+     * Get the payment type icon.
+     */
+    public function getTipePembayaranIconAttribute(): string
+    {
+        return match($this->tipe_pembayaran) {
+            'kamar' => '🏠',
+            'makanan' => '🍽️',
+            'galon' => '💧',
+            'laundry' => '👕',
+            default => '💳',
         };
     }
 
@@ -202,38 +282,45 @@ class Pembayaran extends Model
     public function generateSnapToken(): ?string
     {
         try {
-            // Get config directly
             $serverKey = config('midtrans.server_key');
             $isProduction = config('midtrans.is_production');
             $skipSsl = config('midtrans.skip_ssl_verification');
-            
-            // Log for debugging
+
             \Log::info('Midtrans Config Check', [
                 'server_key' => $serverKey,
-                'server_key_length' => strlen($serverKey),
                 'is_production' => $isProduction,
-                'skip_ssl' => $skipSsl,
             ]);
-            
-            // Use manual CURL request to avoid library issues
-            $baseUrl = $isProduction 
-                ? 'https://app.midtrans.com/snap/v1/transactions' 
+
+            $baseUrl = $isProduction
+                ? 'https://app.midtrans.com/snap/v1/transactions'
                 : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
-            
+
+            // Use orderan_id as order_id for Midtrans
+            $orderId = $this->orderan_id ?? $this->order_id ?? 'PAY-' . $this->id_pembayaran . '-' . time();
+
+            // Get customer details based on payment type
+            $customerFirstName = 'Customer';
+            $customerEmail = 'customer@example.com';
+            $customerPhone = '-';
+
+            if ($this->tipe_pembayaran === 'kamar' && $this->pesan) {
+                $customerFirstName = $this->pesan->penyewa->nama_lengkap;
+                $customerEmail = $this->pesan->penyewa->email;
+                $customerPhone = $this->pesan->penyewa->no_hp;
+            }
+
             $params = [
                 'transaction_details' => [
-                    'order_id' => $this->order_id,
+                    'order_id' => $orderId,
                     'gross_amount' => (int) $this->jumlah_bayar,
                 ],
                 'customer_details' => [
-                    'first_name' => $this->pesan->penyewa->nama_lengkap,
-                    'email' => $this->pesan->penyewa->email,
-                    'phone' => $this->pesan->penyewa->no_hp,
+                    'first_name' => $customerFirstName,
+                    'email' => $customerEmail,
+                    'phone' => $customerPhone,
                 ],
             ];
-            
-            \Log::info('Midtrans Request', ['params' => $params]);
-            
+
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $baseUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -244,51 +331,38 @@ class Pembayaran extends Model
                 'Accept: application/json',
                 'Authorization: Basic ' . base64_encode($serverKey . ':')
             ]);
-            
+
             if ($skipSsl) {
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
             }
-            
+
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlError = curl_error($ch);
             curl_close($ch);
-            
-            \Log::info('Midtrans Response', [
-                'http_code' => $httpCode,
-                'curl_error' => $curlError,
-                'response' => $response,
-            ]);
-            
+
             if ($curlError) {
                 throw new \Exception('CURL Error: ' . $curlError);
             }
-            
+
             if ($httpCode !== 200 && $httpCode !== 201) {
-                throw new \Exception('Midtrans API Error: HTTP ' . $httpCode . ' - ' . $response);
+                throw new \Exception('Midtrans API Error: HTTP ' . $httpCode);
             }
-            
+
             $result = json_decode($response);
-            
+
             if (!$result || !isset($result->token)) {
-                throw new \Exception('Invalid response from Midtrans: ' . $response);
+                throw new \Exception('Invalid response from Midtrans');
             }
-            
-            $snapToken = $result->token;
-            
-            \Log::info('Snap Token Generated', ['token' => $snapToken]);
-            
-            $this->snap_token = $snapToken;
+
+            $this->order_id = $orderId;
+            $this->snap_token = $result->token;
             $this->save();
-            
-            return $snapToken;
+
+            return $this->snap_token;
         } catch (\Exception $e) {
-            \Log::error('Error generating Snap token: ' . $e->getMessage(), [
-                'exception' => get_class($e),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ]);
+            \Log::error('Error generating Snap token: ' . $e->getMessage());
             return null;
         }
     }
@@ -302,67 +376,40 @@ class Pembayaran extends Model
             \Log::info('Midtrans Callback Processing', [
                 'order_id' => $notificationData['order_id'] ?? 'N/A',
                 'transaction_status' => $notificationData['transaction_status'] ?? 'N/A',
-                'payment_type' => $notificationData['payment_type'] ?? 'N/A',
             ]);
 
-            \Midtrans\Config::$serverKey = config('midtrans.server_key');
-
-            // Verify notification
             $statusCode = $notificationData['status_code'] ?? '';
             $transactionId = $notificationData['transaction_id'] ?? '';
-            $order_id = $notificationData['order_id'] ?? '';
+            $orderId = $notificationData['order_id'] ?? '';
             $grossAmount = $notificationData['gross_amount'] ?? '';
             $transactionStatus = $notificationData['transaction_status'] ?? '';
             $signatureKey = $notificationData['signature_key'] ?? '';
 
-            // Verify signature key (Midtrans signature format)
-            // Signature key = SHA512(order_id + status_code + gross_amount + server_key)
-            $computedSignature = hash('sha512', $order_id . $statusCode . $grossAmount . config('midtrans.server_key'));
-            
-            \Log::info('Signature Verification', [
-                'received' => $signatureKey,
-                'computed' => $computedSignature,
-                'match' => $signatureKey === $computedSignature,
-            ]);
+            $computedSignature = hash('sha512', $orderId . $statusCode . $grossAmount . config('midtrans.server_key'));
 
             if ($signatureKey !== $computedSignature) {
-                \Log::error('Invalid Midtrans signature key - skipping verification for development');
-                // For development, we skip signature verification if it fails
-                // In production, you should NOT skip this!
+                \Log::warning('Invalid Midtrans signature key');
             }
 
-            // Update payment data
             $this->transaction_id = $transactionId;
             $this->transaction_status = $transactionStatus;
             $this->payment_type = $notificationData['payment_type'] ?? null;
+            
+            // Map Midtrans payment_type to jenis_pembayaran
+            $midtransPaymentType = $notificationData['payment_type'] ?? null;
+            if ($midtransPaymentType) {
+                $this->jenis_pembayaran = $this->mapPaymentType($midtransPaymentType);
+            }
 
             if (isset($notificationData['transaction_time'])) {
                 $this->transaction_time = $notificationData['transaction_time'];
             }
 
-            if (isset($notificationData['settlement_time'])) {
-                $this->settlement_time = $notificationData['settlement_time'];
-            }
-
-            if (isset($notificationData['expire_time'])) {
-                $this->expire_time = $notificationData['expire_time'];
-            }
-
             $this->save();
 
-            \Log::info('Payment Updated', [
-                'pembayaran_id' => $this->id_pembayaran,
-                'transaction_status' => $transactionStatus,
-            ]);
-
-            // Handle based on transaction status
             return $this->processTransactionStatus($transactionStatus);
         } catch (\Exception $e) {
-            \Log::error('Error handling Midtrans callback: ' . $e->getMessage(), [
-                'exception' => get_class($e),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ]);
+            \Log::error('Error handling Midtrans callback: ' . $e->getMessage());
             return false;
         }
     }
@@ -372,26 +419,115 @@ class Pembayaran extends Model
      */
     private function processTransactionStatus(string $status): bool
     {
-        $pesan = $this->pesan;
-        if (!$pesan) {
-            \Log::error('Pesan not found for pembayaran', ['pembayaran_id' => $this->id_pembayaran]);
+        // Handle based on payment type
+        if ($this->tipe_pembayaran === 'makanan') {
+            return $this->processFoodOrderStatus($status);
+        }
+
+        // Default: handle kamar payment
+        return $this->processKamarPaymentStatus($status);
+    }
+
+    /**
+     * Map Midtrans payment_type to jenis_pembayaran.
+     */
+    private function mapPaymentType(string $paymentType): string
+    {
+        return match($paymentType) {
+            'bank_transfer', 'va', 'bca_va', 'bni_va', 'permata_va', 'other_va', 'cimb_va' => 'transfer_bank',
+            'gopay', 'gopay-wallet', 'shopeepay', 'dana', 'linkaja', 'ovo' => 'ewallet',
+            'credit_card', 'kredit_card' => 'credit_card',
+            'qris' => 'qris',
+            'indomaret', 'alfamart' => 'over_counter',
+            default => 'ewallet',
+        };
+    }
+
+    /**
+     * Process food order payment status update.
+     */
+    private function processFoodOrderStatus(string $status): bool
+    {
+        // Find food order by id_pesan (which stores id_pesanan_makanan for food payments)
+        $order = \App\Models\PesananMakananHeader::find($this->id_pesan);
+        
+        if (!$order) {
+            \Log::error('Food order not found for payment', [
+                'pembayaran_id' => $this->id_pembayaran,
+                'id_pesan' => $this->id_pesan,
+            ]);
             return false;
         }
 
-        \Log::info('Processing Transaction Status', [
+        \Log::info('Processing Food Order Payment', [
+            'order_id' => $order->id_pesanan_makanan,
             'status' => $status,
-            'pesan_id' => $pesan->id_pesan,
-            'current_status' => $pesan->status_pesan,
         ]);
 
         switch ($status) {
             case 'settlement':
             case 'capture':
-                // Payment successful
-                \Log::info('Payment settled', ['pesan_id' => $pesan->id_pesan]);
-                if ($pesan->status_pesan === \App\Models\Pesan::STATUS_PROSES_VERIFIKASI || 
-                    $pesan->status_pesan === \App\Models\Pesan::STATUS_MENUNGGU_PEMBAYARAN) {
-                    $pesan->status_pesan = \App\Models\Pesan::STATUS_AKTIF;
+                // Payment successful - update order status to diproses
+                if ($order->status_antar === PesananMakananHeader::STATUS_MENUNGGU_BAYAR) {
+                    $order->status_antar = PesananMakananHeader::STATUS_DIPROSES;
+                    $order->save();
+                }
+                \Log::info('Food order payment settled', [
+                    'order_id' => $order->id_pesanan_makanan,
+                    'new_status' => $order->status_antar,
+                ]);
+                return true;
+
+            case 'pending':
+                // Payment is pending - don't change order status
+                \Log::info('Food order payment pending', [
+                    'order_id' => $order->id_pesanan_makanan,
+                ]);
+                return true;
+
+            case 'cancel':
+            case 'deny':
+            case 'expire':
+                // Payment cancelled/expired - update order status back to menunggu_bayar or batalkan
+                if ($order->status_antar === PesananMakananHeader::STATUS_MENUNGGU_BAYAR) {
+                    $order->status_antar = PesananMakananHeader::STATUS_DIBATALKAN;
+                    $order->save();
+                    
+                    // Restore stock
+                    foreach ($order->details as $detail) {
+                        $detail->makanan->increment('stok', $detail->jumlah);
+                    }
+                }
+                \Log::info('Food order payment cancelled', [
+                    'order_id' => $order->id_pesanan_makanan,
+                    'new_status' => $order->status_antar,
+                ]);
+                return true;
+
+            default:
+                \Log::warning('Unknown food order payment status', [
+                    'order_id' => $order->id_pesanan_makanan,
+                    'status' => $status,
+                ]);
+                return false;
+        }
+    }
+
+    /**
+     * Process kamar payment status update.
+     */
+    private function processKamarPaymentStatus(string $status): bool
+    {
+        $pesan = $this->pesan;
+        if (!$pesan) {
+            return false;
+        }
+
+        switch ($status) {
+            case 'settlement':
+            case 'capture':
+                if (in_array($pesan->status_pesan, [Pesan::STATUS_PROSES_VERIFIKASI, Pesan::STATUS_MENUNGGU_PEMBAYARAN])) {
+                    $pesan->status_pesan = Pesan::STATUS_AKTIF;
                     $pesan->save();
                 }
                 if ($pesan->kamar && $pesan->kamar->status_kamar !== 'terisi') {
@@ -401,17 +537,12 @@ class Pembayaran extends Model
                 return true;
 
             case 'pending':
-                // Payment is pending (customer hasn't completed payment yet)
-                \Log::info('Payment pending', ['pesan_id' => $pesan->id_pesan]);
-                // Don't change status, just log it
                 return true;
 
             case 'cancel':
             case 'deny':
             case 'expire':
-                // Payment cancelled/expired
-                \Log::info('Payment cancelled/denied/expired', ['pesan_id' => $pesan->id_pesan]);
-                $pesan->status_pesan = \App\Models\Pesan::STATUS_DIBATALKAN;
+                $pesan->status_pesan = Pesan::STATUS_DIBATALKAN;
                 $pesan->save();
                 if ($pesan->kamar) {
                     $pesan->kamar->status_kamar = 'tersedia';
@@ -420,7 +551,6 @@ class Pembayaran extends Model
                 return true;
 
             default:
-                \Log::warning('Unknown transaction status', ['status' => $status]);
                 return false;
         }
     }

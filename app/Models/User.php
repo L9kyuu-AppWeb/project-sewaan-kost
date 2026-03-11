@@ -79,4 +79,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(Pesan::class, 'id_penyewa', 'id_user');
     }
+
+    /**
+     * Get all food orders made by this user (for tenants).
+     */
+    public function foodOrders(): HasMany
+    {
+        return $this->hasMany(PesananMakanan::class, 'id_penyewa', 'id_user');
+    }
+
+    /**
+     * Get all food order headers made by this user (new cart system).
+     */
+    public function foodOrderHeaders(): HasMany
+    {
+        return $this->hasMany(PesananMakananHeader::class, 'id_penyewa', 'id_user');
+    }
 }

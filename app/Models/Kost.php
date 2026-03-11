@@ -73,4 +73,36 @@ class Kost extends Model
     {
         return $this->rooms()->where('status_kamar', 'terisi')->count();
     }
+
+    /**
+     * Get all food menus for this kost.
+     */
+    public function foods(): HasMany
+    {
+        return $this->hasMany(Makanan::class, 'id_kost', 'id_kost');
+    }
+
+    /**
+     * Get available food menus for this kost.
+     */
+    public function availableFoods(): HasMany
+    {
+        return $this->foods()->where('is_available', true)->where('stok', '>', 0);
+    }
+
+    /**
+     * Get all food orders for this kost.
+     */
+    public function foodOrders(): HasMany
+    {
+        return $this->hasMany(PesananMakanan::class, 'id_kost', 'id_kost');
+    }
+
+    /**
+     * Get all food order headers for this kost (new cart system).
+     */
+    public function foodOrderHeaders(): HasMany
+    {
+        return $this->hasMany(PesananMakananHeader::class, 'id_kost', 'id_kost');
+    }
 }

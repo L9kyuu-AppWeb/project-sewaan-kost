@@ -439,13 +439,106 @@
                 @auth
                     @if (auth()->user()->role === 'pemilik')
                         <a href="{{ route('dashboard.pemilik') }}" class="nav-link {{ request()->routeIs('dashboard.pemilik') ? 'active' : '' }}">Dashboard</a>
-                        <a href="{{ route('kost.index') }}" class="nav-link {{ request()->routeIs('kost.*') ? 'active' : '' }}">Kelola Kost</a>
-                        <a href="{{ route('pesan.owner.index') }}" class="nav-link {{ request()->routeIs('pesan.owner.*') ? 'active' : '' }}">Verifikasi Pembayaran</a>
-                        <a href="{{ route('kamar.index') }}" class="nav-link {{ request()->routeIs('kamar.*') ? 'active' : '' }}">Kelola Kamar</a>
+                        
+                        <!-- Dropdown Kelola -->
+                        <div style="position: relative; display: inline-block;">
+                            <a href="javascript:void(0)" class="nav-link {{ request()->routeIs('kost.*') || request()->routeIs('kamar.*') || request()->routeIs('makanan.*') ? 'active' : '' }}" 
+                               onclick="toggleDropdown('kelolaDropdown')" 
+                               style="cursor: pointer;">
+                                Kelola ▾
+                            </a>
+                            <div id="kelolaDropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; min-width: 180px; z-index: 1000; padding: 8px 0;">
+                                <a href="{{ route('kost.index') }}" class="nav-link {{ request()->routeIs('kost.*') ? 'active' : '' }}" 
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    🏢 Kost
+                                </a>
+                                <a href="{{ route('kamar.index') }}" class="nav-link {{ request()->routeIs('kamar.*') ? 'active' : '' }}" 
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    🛏️ Kamar
+                                </a>
+                                <a href="{{ route('makanan.index') }}" class="nav-link {{ request()->routeIs('makanan.*') ? 'active' : '' }}" 
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    🍽️ Makanan
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Dropdown Pesanan -->
+                        <div style="position: relative; display: inline-block;">
+                            <a href="javascript:void(0)" class="nav-link {{ request()->routeIs('pesan.owner.*') || request()->routeIs('owner.orders.*') ? 'active' : '' }}" 
+                               onclick="toggleDropdown('pesananDropdown')" 
+                               style="cursor: pointer;">
+                                Pesanan ▾
+                            </a>
+                            <div id="pesananDropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; min-width: 180px; z-index: 1000; padding: 8px 0;">
+                                <a href="{{ route('pesan.owner.index') }}" class="nav-link {{ request()->routeIs('pesan.owner.*') ? 'active' : '' }}" 
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    🛏️ Kamar
+                                </a>
+                                <a href="{{ route('owner.orders.index') }}" class="nav-link {{ request()->routeIs('owner.orders.*') ? 'active' : '' }}" 
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    🍽️ Makanan
+                                </a>
+                            </div>
+                        </div>
                     @else
                         <a href="{{ route('dashboard.penyewa') }}" class="nav-link {{ request()->routeIs('dashboard.penyewa') ? 'active' : '' }}">Dashboard</a>
-                        <a href="{{ route('kost-public.index') }}" class="nav-link {{ request()->routeIs('kost-public.*') ? 'active' : '' }}">Cari Kost</a>
-                        <a href="{{ route('pesan.index') }}" class="nav-link {{ request()->routeIs('pesan.*') ? 'active' : '' }}">Pemesanan</a>
+
+                        <!-- Dropdown Cari -->
+                        <div style="position: relative; display: inline-block;">
+                            <a href="javascript:void(0)" class="nav-link {{ request()->routeIs('kost-public.*') ? 'active' : '' }}"
+                               onclick="toggleDropdown('cariDropdown')"
+                               style="cursor: pointer;">
+                                Cari ▾
+                            </a>
+                            <div id="cariDropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; min-width: 180px; z-index: 1000; padding: 8px 0;">
+                                <a href="{{ route('kost-public.index') }}" class="nav-link {{ request()->routeIs('kost-public.*') ? 'active' : '' }}"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    🏢 Kost
+                                </a>
+                                <a href="{{ route('orders.create') }}" class="nav-link {{ request()->routeIs('orders.create') ? 'active' : '' }}"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    🍽️ Makanan
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown Pemesanan -->
+                        <div style="position: relative; display: inline-block;">
+                            <a href="javascript:void(0)" class="nav-link {{ request()->routeIs('pesan.*') || request()->routeIs('orders.*') ? 'active' : '' }}"
+                               onclick="toggleDropdown('pemesananDropdown')"
+                               style="cursor: pointer;">
+                                Pemesanan ▾
+                            </a>
+                            <div id="pemesananDropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; min-width: 180px; z-index: 1000; padding: 8px 0;">
+                                <a href="{{ route('pesan.index') }}" class="nav-link {{ request()->routeIs('pesan.*') ? 'active' : '' }}"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    🛏️ Kamar
+                                </a>
+                                <a href="{{ route('orders.index') }}" class="nav-link {{ request()->routeIs('orders.*') ? 'active' : '' }}"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    🍽️ Makanan
+                                </a>
+                            </div>
+                        </div>
                     @endif
                     
                     <div class="user-info">
@@ -484,6 +577,11 @@
             menu.classList.toggle('active');
         }
 
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
         // Close menu when clicking outside
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('navMenu');
@@ -491,6 +589,16 @@
             if (!menu.contains(event.target) && !toggle.contains(event.target)) {
                 menu.classList.remove('active');
             }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdowns = document.querySelectorAll('[id$="Dropdown"]');
+            dropdowns.forEach(function(dropdown) {
+                if (!dropdown.contains(event.target) && !event.target.closest('[onclick*="toggleDropdown"]')) {
+                    dropdown.style.display = 'none';
+                }
+            });
         });
 
         // Auto-dismiss flash messages after 5 seconds

@@ -29,26 +29,21 @@ class MidtransController extends Controller
                 ], 400);
             }
 
-            // Extract payment ID from order_id (format: PESAN-{id}-{timestamp})
-            $parts = explode('-', $order_id);
-            if (count($parts) < 3) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid order ID format',
-                ], 400);
-            }
-
-            $pesanId = (int) $parts[1];
-
+            // Find payment record by order_id
             $pembayaran = Pembayaran::where('order_id', $order_id)->first();
 
             if (!$pembayaran) {
-                // Try to find by pesan_id if order_id doesn't match
-                $pembayaran = Pembayaran::whereHas('pesan', function ($q) use ($pesanId) {
-                    $q->where('id_pesan', $pesanId);
-                })->latest('id_pembayaran')->first();
-
+                // Try to find by matching orderan_id for food orders
+                // Food order format: MAKANAN-{id}-{timestamp}
+                if (strpos($order_id, 'MAKANAN-') === 0) {
+                    $pembayaran = Pembayaran::where('orderan_id', $order_id)
+                        ->where('tipe_pembayaran', 'makanan')
+                        ->latest('id_pembayaran')
+                        ->first();
+                }
+                
                 if (!$pembayaran) {
+                    \Log::error('Payment not found for order_id', ['order_id' => $order_id]);
                     return response()->json([
                         'success' => false,
                         'message' => 'Payment record not found',
@@ -65,8 +60,10 @@ class MidtransController extends Controller
                     'message' => 'Payment status updated successfully',
                     'data' => [
                         'order_id' => $pembayaran->order_id,
+                        'orderan_id' => $pembayaran->orderan_id,
                         'transaction_id' => $pembayaran->transaction_id,
                         'transaction_status' => $pembayaran->transaction_status,
+                        'tipe_pembayaran' => $pembayaran->tipe_pembayaran,
                     ],
                 ]);
             } else {

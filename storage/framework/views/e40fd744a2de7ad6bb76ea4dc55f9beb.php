@@ -56,6 +56,60 @@
     </div>
 
     
+    <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h2 style="font-size: 20px; color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            📦 Pesanan Layanan Anda
+        </h2>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+            
+            <a href="<?php echo e(route('orders.index')); ?>" style="text-decoration: none; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); transition: transform 0.2s;"
+               onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <span style="font-size: 32px;">🍽️</span>
+                    <p style="font-size: 13px; color: #666; font-weight: 600;">Makanan</p>
+                </div>
+                <p style="font-size: 28px; color: #333; font-weight: 700; margin: 0;"><?php echo e($stats['total_pesanan_makanan'] ?? 0); ?></p>
+                <div style="display: flex; gap: 10px; margin-top: 10px; font-size: 12px;">
+                    <span style="color: #f093fb;">⏳ <?php echo e($stats['pesanan_makanan_pending'] ?? 0); ?></span>
+                    <span style="color: #4facfe;">🚚 <?php echo e($stats['pesanan_makanan_proses'] ?? 0); ?></span>
+                </div>
+                <p style="font-size: 11px; color: #666; margin-top: 10px;">Klik untuk lihat →</p>
+            </a>
+
+            
+            <a href="<?php echo e(route('galon.orders.index')); ?>" style="text-decoration: none; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); transition: transform 0.2s;"
+               onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <span style="font-size: 32px;">💧</span>
+                    <p style="font-size: 13px; color: #666; font-weight: 600;">Galon</p>
+                </div>
+                <p style="font-size: 28px; color: #333; font-weight: 700; margin: 0;"><?php echo e($stats['total_pesanan_galon'] ?? 0); ?></p>
+                <div style="display: flex; gap: 10px; margin-top: 10px; font-size: 12px;">
+                    <span style="color: #f093fb;">⏳ <?php echo e($stats['pesanan_galon_pending'] ?? 0); ?></span>
+                    <span style="color: #4facfe;">🚚 <?php echo e($stats['pesanan_galon_proses'] ?? 0); ?></span>
+                </div>
+                <p style="font-size: 11px; color: #666; margin-top: 10px;">Klik untuk lihat →</p>
+            </a>
+
+            
+            <a href="<?php echo e(route('laundry.orders.index')); ?>" style="text-decoration: none; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: linear-gradient(135deg, #96fbc4 0%, #f9f586 100%); transition: transform 0.2s;"
+               onmouseover="this.style.transform='translateY(-3px)';" onmouseout="this.style.transform='translateY(0)';">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <span style="font-size: 32px;">👕</span>
+                    <p style="font-size: 13px; color: #666; font-weight: 600;">Laundry</p>
+                </div>
+                <p style="font-size: 28px; color: #333; font-weight: 700; margin: 0;"><?php echo e($stats['total_pesanan_laundry'] ?? 0); ?></p>
+                <div style="display: flex; gap: 10px; margin-top: 10px; font-size: 12px;">
+                    <span style="color: #f093fb;">⏳ <?php echo e($stats['pesanan_laundry_pending'] ?? 0); ?></span>
+                    <span style="color: #4facfe;">🧼 <?php echo e($stats['pesanan_laundry_proses'] ?? 0); ?></span>
+                </div>
+                <p style="font-size: 11px; color: #666; margin-top: 10px;">Klik untuk lihat →</p>
+            </a>
+        </div>
+    </div>
+
+    
     <?php if($stats['pesan_aktif_list'] && $stats['pesan_aktif_list']->count() > 0): ?>
     <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
         <h2 style="font-size: 20px; color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">

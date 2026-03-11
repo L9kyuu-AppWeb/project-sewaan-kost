@@ -442,7 +442,7 @@
                         
                         <!-- Dropdown Kelola -->
                         <div style="position: relative; display: inline-block;">
-                            <a href="javascript:void(0)" class="nav-link <?php echo e(request()->routeIs('kost.*') || request()->routeIs('kamar.*') || request()->routeIs('makanan.*') ? 'active' : ''); ?>" 
+                            <a href="javascript:void(0)" class="nav-link <?php echo e(request()->routeIs('kost.*') || request()->routeIs('kamar.*') || request()->routeIs('makanan.*') || request()->routeIs('galon.*') ? 'active' : ''); ?>" 
                                onclick="toggleDropdown('kelolaDropdown')" 
                                style="cursor: pointer;">
                                 Kelola ▾
@@ -466,28 +466,52 @@
                                    onmouseout="this.style.background=''; this.style.color=''">
                                     🍽️ Makanan
                                 </a>
+                                <a href="<?php echo e(route('galon.index')); ?>" class="nav-link <?php echo e(request()->routeIs('galon.*') ? 'active' : ''); ?>"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    💧 Galon (Katalog)
+                                </a>
+                                <a href="<?php echo e(route('laundry.index')); ?>" class="nav-link <?php echo e(request()->routeIs('laundry.*') ? 'active' : ''); ?>"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    👕 Laundry (Katalog)
+                                </a>
                             </div>
                         </div>
-                        
+
                         <!-- Dropdown Pesanan -->
                         <div style="position: relative; display: inline-block;">
-                            <a href="javascript:void(0)" class="nav-link <?php echo e(request()->routeIs('pesan.owner.*') || request()->routeIs('owner.orders.*') ? 'active' : ''); ?>" 
-                               onclick="toggleDropdown('pesananDropdown')" 
+                            <a href="javascript:void(0)" class="nav-link <?php echo e(request()->routeIs('pesan.owner.*') || request()->routeIs('owner.orders.*') || request()->routeIs('owner.galon.*') || request()->routeIs('owner.laundry.*') ? 'active' : ''); ?>"
+                               onclick="toggleDropdown('pesananDropdown')"
                                style="cursor: pointer;">
                                 Pesanan ▾
                             </a>
                             <div id="pesananDropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; min-width: 180px; z-index: 1000; padding: 8px 0;">
-                                <a href="<?php echo e(route('pesan.owner.index')); ?>" class="nav-link <?php echo e(request()->routeIs('pesan.owner.*') ? 'active' : ''); ?>" 
+                                <a href="<?php echo e(route('pesan.owner.index')); ?>" class="nav-link <?php echo e(request()->routeIs('pesan.owner.*') ? 'active' : ''); ?>"
                                    style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
                                    onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
                                    onmouseout="this.style.background=''; this.style.color=''">
                                     🛏️ Kamar
                                 </a>
-                                <a href="<?php echo e(route('owner.orders.index')); ?>" class="nav-link <?php echo e(request()->routeIs('owner.orders.*') ? 'active' : ''); ?>" 
+                                <a href="<?php echo e(route('owner.orders.index')); ?>" class="nav-link <?php echo e(request()->routeIs('owner.orders.*') ? 'active' : ''); ?>"
                                    style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
                                    onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
                                    onmouseout="this.style.background=''; this.style.color=''">
                                     🍽️ Makanan
+                                </a>
+                                <a href="<?php echo e(route('owner.galon.index')); ?>" class="nav-link <?php echo e(request()->routeIs('owner.galon.*') ? 'active' : ''); ?>"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    💧 Galon
+                                </a>
+                                <a href="<?php echo e(route('owner.laundry.index')); ?>" class="nav-link <?php echo e(request()->routeIs('owner.laundry.*') ? 'active' : ''); ?>"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    👕 Laundry
                                 </a>
                             </div>
                         </div>
@@ -514,12 +538,24 @@
                                    onmouseout="this.style.background=''; this.style.color=''">
                                     🍽️ Makanan
                                 </a>
+                                <a href="<?php echo e(route('galon.orders.create')); ?>" class="nav-link <?php echo e(request()->routeIs('galon.orders.*') ? 'active' : ''); ?>"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    💧 Galon
+                                </a>
+                                <a href="<?php echo e(route('laundry.orders.create')); ?>" class="nav-link <?php echo e(request()->routeIs('laundry.orders.*') ? 'active' : ''); ?>"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    👕 Laundry
+                                </a>
                             </div>
                         </div>
 
                         <!-- Dropdown Pemesanan -->
                         <div style="position: relative; display: inline-block;">
-                            <a href="javascript:void(0)" class="nav-link <?php echo e(request()->routeIs('pesan.*') || request()->routeIs('orders.*') ? 'active' : ''); ?>"
+                            <a href="javascript:void(0)" class="nav-link <?php echo e(request()->routeIs('pesan.*') || request()->routeIs('orders.*') || request()->routeIs('galon.orders.*') || request()->routeIs('laundry.orders.*') ? 'active' : ''); ?>"
                                onclick="toggleDropdown('pemesananDropdown')"
                                style="cursor: pointer;">
                                 Pemesanan ▾
@@ -536,6 +572,18 @@
                                    onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
                                    onmouseout="this.style.background=''; this.style.color=''">
                                     🍽️ Makanan
+                                </a>
+                                <a href="<?php echo e(route('galon.orders.index')); ?>" class="nav-link <?php echo e(request()->routeIs('galon.orders.*') ? 'active' : ''); ?>"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    💧 Galon
+                                </a>
+                                <a href="<?php echo e(route('laundry.orders.index')); ?>" class="nav-link <?php echo e(request()->routeIs('laundry.orders.*') ? 'active' : ''); ?>"
+                                   style="display: block; padding: 10px 16px; color: #333; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 6px; transition: all 0.3s;"
+                                   onmouseover="this.style.background='#fce4ec'; this.style.color='#970747'"
+                                   onmouseout="this.style.background=''; this.style.color=''">
+                                    👕 Laundry
                                 </a>
                             </div>
                         </div>

@@ -95,4 +95,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(PesananMakananHeader::class, 'id_penyewa', 'id_user');
     }
+
+    /**
+     * Get all galon orders made by this user.
+     */
+    public function galonOrders(): HasMany
+    {
+        return $this->hasMany(PesananGalon::class, 'id_penyewa', 'id_user');
+    }
+
+    /**
+     * Get all laundry orders made by this user.
+     */
+    public function laundryOrders(): HasMany
+    {
+        return $this->hasMany(PesananLaundry::class, 'id_penyewa', 'id_user');
+    }
 }

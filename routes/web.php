@@ -1,14 +1,20 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GalonController;
 use App\Http\Controllers\KamarController;
 use App\Http\Controllers\KostController;
 use App\Http\Controllers\KostPublicController;
+use App\Http\Controllers\LaundryController;
 use App\Http\Controllers\MakananController;
 use App\Http\Controllers\MidtransController;
+use App\Http\Controllers\OwnerGalonController;
+use App\Http\Controllers\OwnerLaundryController;
 use App\Http\Controllers\OwnerOrderController;
 use App\Http\Controllers\PesanController;
 use App\Http\Controllers\PesanOwnerController;
+use App\Http\Controllers\TenantGalonController;
+use App\Http\Controllers\TenantLaundryController;
 use App\Http\Controllers\TenantOrderController;
 use App\Models\Pesan;
 use App\Models\Pembayaran;
@@ -84,30 +90,58 @@ Route::middleware('auth')->group(function () {
                 ->whereIn('transaction_status', ['settlement', 'capture'])
                 ->sum('jumlah_bayar'),
 
-            // Revenue statistics - MAKANAN payments
-            'pendapatan_makanan_bulan_ini' => \App\Models\Pembayaran::whereHas('pesananMakanan.kost', function ($q) use ($kostIds) {
-                    $q->whereIn('id_kost', $kostIds);
-                })
-                ->where('tipe_pembayaran', 'makanan')
+            // Revenue statistics - GALON payments
+            'pendapatan_galon_bulan_ini' => \App\Models\Pembayaran::where('tipe_pembayaran', 'galon')
                 ->whereIn('transaction_status', ['settlement', 'capture'])
                 ->whereYear('settlement_time', now()->year)
                 ->whereMonth('settlement_time', now()->month)
                 ->sum('jumlah_bayar'),
 
-            'pendapatan_makanan_tahun_ini' => \App\Models\Pembayaran::whereHas('pesananMakanan.kost', function ($q) use ($kostIds) {
-                    $q->whereIn('id_kost', $kostIds);
-                })
-                ->where('tipe_pembayaran', 'makanan')
+            'pendapatan_galon_tahun_ini' => \App\Models\Pembayaran::where('tipe_pembayaran', 'galon')
                 ->whereIn('transaction_status', ['settlement', 'capture'])
                 ->whereYear('settlement_time', now()->year)
                 ->sum('jumlah_bayar'),
 
-            'pendapatan_makanan_total' => \App\Models\Pembayaran::whereHas('pesananMakanan.kost', function ($q) use ($kostIds) {
-                    $q->whereIn('id_kost', $kostIds);
-                })
-                ->where('tipe_pembayaran', 'makanan')
+            'pendapatan_galon_total' => \App\Models\Pembayaran::where('tipe_pembayaran', 'galon')
                 ->whereIn('transaction_status', ['settlement', 'capture'])
                 ->sum('jumlah_bayar'),
+
+            // Revenue statistics - LAUNDRY payments
+            'pendapatan_laundry_bulan_ini' => \App\Models\Pembayaran::where('tipe_pembayaran', 'laundry')
+                ->whereIn('transaction_status', ['settlement', 'capture'])
+                ->whereYear('settlement_time', now()->year)
+                ->whereMonth('settlement_time', now()->month)
+                ->sum('jumlah_bayar'),
+
+            'pendapatan_laundry_tahun_ini' => \App\Models\Pembayaran::where('tipe_pembayaran', 'laundry')
+                ->whereIn('transaction_status', ['settlement', 'capture'])
+                ->whereYear('settlement_time', now()->year)
+                ->sum('jumlah_bayar'),
+
+            'pendapatan_laundry_total' => \App\Models\Pembayaran::where('tipe_pembayaran', 'laundry')
+                ->whereIn('transaction_status', ['settlement', 'capture'])
+                ->sum('jumlah_bayar'),
+
+            // Order statistics - MAKANAN
+            'total_pesanan_makanan' => \App\Models\PesananMakananHeader::whereIn('id_kost', $kostIds)->count(),
+            'pesanan_makanan_pending' => \App\Models\PesananMakananHeader::whereIn('id_kost', $kostIds)
+                ->where('status_antar', 'menunggu_bayar')->count(),
+            'pesanan_makanan_proses' => \App\Models\PesananMakananHeader::whereIn('id_kost', $kostIds)
+                ->where('status_antar', 'diproses')->count(),
+
+            // Order statistics - GALON
+            'total_pesanan_galon' => \App\Models\PesananGalon::whereIn('id_kost', $kostIds)->count(),
+            'pesanan_galon_pending' => \App\Models\PesananGalon::whereIn('id_kost', $kostIds)
+                ->where('status_galon', 'menunggu_bayar')->count(),
+            'pesanan_galon_proses' => \App\Models\PesananGalon::whereIn('id_kost', $kostIds)
+                ->where('status_galon', 'diproses')->count(),
+
+            // Order statistics - LAUNDRY
+            'total_pesanan_laundry' => \App\Models\PesananLaundry::whereIn('id_kost', $kostIds)->count(),
+            'pesanan_laundry_pending' => \App\Models\PesananLaundry::whereIn('id_kost', $kostIds)
+                ->where('status_laundry', 'menunggu_bayar')->count(),
+            'pesanan_laundry_proses' => \App\Models\PesananLaundry::whereIn('id_kost', $kostIds)
+                ->where('status_laundry', 'sedang_dicuci')->count(),
 
             // TOTAL Revenue (all payment types)
             'pendapatan_bulan_ini' => \App\Models\Pembayaran::whereIn('tipe_pembayaran', ['kamar', 'makanan', 'galon', 'laundry'])
@@ -186,6 +220,27 @@ Route::middleware('auth')->group(function () {
             'kost_saat_ini' => $pesanAktifList->first()?->kamar?->kost, // For backward compatibility
             'pembayaran_pending' => $pembayaranPending,
             'total_pembayaran_pending' => $pembayaranPending?->jumlah_bayar ?? 0,
+
+            // Food orders statistics
+            'total_pesanan_makanan' => \App\Models\PesananMakananHeader::where('id_penyewa', $user->id_user)->count(),
+            'pesanan_makanan_pending' => \App\Models\PesananMakananHeader::where('id_penyewa', $user->id_user)
+                ->where('status_antar', 'menunggu_bayar')->count(),
+            'pesanan_makanan_proses' => \App\Models\PesananMakananHeader::where('id_penyewa', $user->id_user)
+                ->whereIn('status_antar', ['diproses', 'dikirim'])->count(),
+
+            // Galon orders statistics
+            'total_pesanan_galon' => \App\Models\PesananGalon::where('id_penyewa', $user->id_user)->count(),
+            'pesanan_galon_pending' => \App\Models\PesananGalon::where('id_penyewa', $user->id_user)
+                ->where('status_galon', 'menunggu_bayar')->count(),
+            'pesanan_galon_proses' => \App\Models\PesananGalon::where('id_penyewa', $user->id_user)
+                ->whereIn('status_galon', ['diproses', 'diambil'])->count(),
+
+            // Laundry orders statistics
+            'total_pesanan_laundry' => \App\Models\PesananLaundry::where('id_penyewa', $user->id_user)->count(),
+            'pesanan_laundry_pending' => \App\Models\PesananLaundry::where('id_penyewa', $user->id_user)
+                ->where('status_laundry', 'menunggu_bayar')->count(),
+            'pesanan_laundry_proses' => \App\Models\PesananLaundry::where('id_penyewa', $user->id_user)
+                ->whereIn('status_laundry', ['sedang_dicuci', 'siap_antar'])->count(),
         ];
 
         return view('dashboard.penyewa', compact('stats'));
@@ -257,6 +312,45 @@ Route::middleware('auth')->group(function () {
         Route::get('/stats/overview', [OwnerOrderController::class, 'stats'])->name('stats');
     });
 
+    // Tenant galon order routes (for penyewa)
+    Route::prefix('galon-orders')->name('galon.orders.')->middleware('auth')->group(function () {
+        Route::get('/', [TenantGalonController::class, 'index'])->name('index');
+        Route::get('/create', [TenantGalonController::class, 'create'])->name('create');
+        Route::post('/', [TenantGalonController::class, 'store'])->name('store');
+        Route::get('/{order}', [TenantGalonController::class, 'show'])->name('show');
+        Route::patch('/{order}/cancel', [TenantGalonController::class, 'cancel'])->name('cancel');
+        Route::patch('/{order}/complete', [TenantGalonController::class, 'complete'])->name('complete');
+        Route::get('/{order}/pay', [TenantGalonController::class, 'pay'])->name('pay');
+        Route::get('/{order}/payment/success', [TenantGalonController::class, 'paymentSuccess'])->name('payment.success');
+        Route::get('/{order}/payment/failed', [TenantGalonController::class, 'paymentFailed'])->name('payment.failed');
+    });
+
+    // Owner galon order management routes (for pemilik)
+    Route::prefix('owner-galon')->name('owner.galon.')->middleware('pemilik')->group(function () {
+        Route::get('/', [OwnerGalonController::class, 'index'])->name('index');
+        Route::get('/{order}', [OwnerGalonController::class, 'show'])->name('show');
+        Route::post('/{order}/process', [OwnerGalonController::class, 'process'])->name('process');
+        Route::post('/{order}/deliver', [OwnerGalonController::class, 'deliver'])->name('deliver');
+        Route::post('/{order}/cancel', [OwnerGalonController::class, 'cancel'])->name('cancel');
+        Route::get('/stats/overview', [OwnerGalonController::class, 'stats'])->name('stats');
+    });
+
+    // Galon catalog management routes (for pemilik)
+    Route::prefix('galon')->name('galon.')->middleware('pemilik')->group(function () {
+        Route::get('/', [GalonController::class, 'index'])->name('index');
+        Route::get('/create', [GalonController::class, 'create'])->name('create');
+        Route::post('/', [GalonController::class, 'store'])->name('store');
+        Route::get('/{galonType}', [GalonController::class, 'show'])->name('show');
+        Route::get('/{galonType}/edit', [GalonController::class, 'edit'])->name('edit');
+        Route::put('/{galonType}', [GalonController::class, 'update'])->name('update');
+        Route::delete('/{galonType}', [GalonController::class, 'destroy'])->name('destroy');
+    });
+
+    // Galon catalog browsing route (for penyewa) - redirects to galon orders
+    Route::get('/galon-catalog', function () {
+        return redirect()->route('galon.orders.create');
+    })->name('galon.catalog')->middleware('auth');
+
     // Pesan routes (for tenants)
     Route::prefix('pesan')->name('pesan.')->middleware('auth')->group(function () {
         Route::get('/', [PesanController::class, 'index'])->name('index');
@@ -279,6 +373,46 @@ Route::middleware('auth')->group(function () {
     Route::get('/pesan/{pesan}/pay', [MidtransController::class, 'pay'])->name('midtrans.pay')->middleware('auth');
     Route::get('/pesan/{pesan}/pay/success', [MidtransController::class, 'success'])->name('midtrans.success')->middleware('auth');
     Route::get('/pesan/{pesan}/pay/failed', [MidtransController::class, 'failed'])->name('midtrans.failed')->middleware('auth');
+
+    // Tenant laundry order routes (for penyewa)
+    Route::prefix('laundry-orders')->name('laundry.orders.')->middleware('auth')->group(function () {
+        Route::get('/', [TenantLaundryController::class, 'index'])->name('index');
+        Route::get('/create', [TenantLaundryController::class, 'create'])->name('create');
+        Route::post('/', [TenantLaundryController::class, 'store'])->name('store');
+        Route::get('/{order}', [TenantLaundryController::class, 'show'])->name('show');
+        Route::patch('/{order}/cancel', [TenantLaundryController::class, 'cancel'])->name('cancel');
+        Route::patch('/{order}/complete', [TenantLaundryController::class, 'complete'])->name('complete');
+        Route::get('/{order}/pay', [TenantLaundryController::class, 'pay'])->name('pay');
+        Route::get('/{order}/payment/success', [TenantLaundryController::class, 'paymentSuccess'])->name('payment.success');
+        Route::get('/{order}/payment/failed', [TenantLaundryController::class, 'paymentFailed'])->name('payment.failed');
+    });
+
+    // Owner laundry order management routes (for pemilik)
+    Route::prefix('owner-laundry')->name('owner.laundry.')->middleware('pemilik')->group(function () {
+        Route::get('/', [OwnerLaundryController::class, 'index'])->name('index');
+        Route::get('/{order}', [OwnerLaundryController::class, 'show'])->name('show');
+        Route::post('/{order}/weigh', [OwnerLaundryController::class, 'weigh'])->name('weigh');
+        Route::post('/{order}/set-estimation', [OwnerLaundryController::class, 'setEstimation'])->name('set-estimation');
+        Route::post('/{order}/upload-finished', [OwnerLaundryController::class, 'uploadFinished'])->name('upload-finished');
+        Route::post('/{order}/cancel', [OwnerLaundryController::class, 'cancel'])->name('cancel');
+        Route::get('/stats/overview', [OwnerLaundryController::class, 'stats'])->name('stats');
+    });
+
+    // Laundry catalog management routes (for pemilik)
+    Route::prefix('laundry')->name('laundry.')->middleware('pemilik')->group(function () {
+        Route::get('/', [LaundryController::class, 'index'])->name('index');
+        Route::get('/create', [LaundryController::class, 'create'])->name('create');
+        Route::post('/', [LaundryController::class, 'store'])->name('store');
+        Route::get('/{laundryType}', [LaundryController::class, 'show'])->name('show');
+        Route::get('/{laundryType}/edit', [LaundryController::class, 'edit'])->name('edit');
+        Route::put('/{laundryType}', [LaundryController::class, 'update'])->name('update');
+        Route::delete('/{laundryType}', [LaundryController::class, 'destroy'])->name('destroy');
+    });
+
+    // Laundry catalog browsing route (for penyewa) - redirects to laundry orders
+    Route::get('/laundry-catalog', function () {
+        return redirect()->route('laundry.orders.create');
+    })->name('laundry.catalog')->middleware('auth');
 });
 
 // Midtrans callback (NO auth - accessible by Midtrans server)

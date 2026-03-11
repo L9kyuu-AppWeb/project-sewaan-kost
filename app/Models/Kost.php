@@ -105,4 +105,36 @@ class Kost extends Model
     {
         return $this->hasMany(PesananMakananHeader::class, 'id_kost', 'id_kost');
     }
+
+    /**
+     * Get all galon catalog types for this kost.
+     */
+    public function galonTypes(): HasMany
+    {
+        return $this->hasMany(GalonKatalog::class, 'id_kost', 'id_kost');
+    }
+
+    /**
+     * Get all galon orders for this kost.
+     */
+    public function galonOrders(): HasMany
+    {
+        return $this->hasMany(PesananGalon::class, 'id_kost', 'id_kost');
+    }
+
+    /**
+     * Get all laundry catalog types for this kost.
+     */
+    public function laundryTypes(): HasMany
+    {
+        return $this->hasMany(LaundryKatalog::class, 'id_kost', 'id_kost');
+    }
+
+    /**
+     * Get all laundry orders for this kost.
+     */
+    public function laundryOrders(): HasMany
+    {
+        return $this->hasMany(PesananLaundry::class, 'id_kost', 'id_kost');
+    }
 }

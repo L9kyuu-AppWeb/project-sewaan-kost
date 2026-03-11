@@ -420,12 +420,12 @@ class Pembayaran extends Model
     private function processTransactionStatus(string $status): bool
     {
         // Handle based on payment type
-        if ($this->tipe_pembayaran === 'makanan') {
-            return $this->processFoodOrderStatus($status);
-        }
-
-        // Default: handle kamar payment
-        return $this->processKamarPaymentStatus($status);
+        return match($this->tipe_pembayaran) {
+            'makanan' => $this->processFoodOrderStatus($status),
+            'galon' => $this->processGalonOrderStatus($status),
+            'laundry' => $this->processLaundryOrderStatus($status),
+            default => $this->processKamarPaymentStatus($status),
+        };
     }
 
     /**
@@ -450,7 +450,7 @@ class Pembayaran extends Model
     {
         // Find food order by id_pesan (which stores id_pesanan_makanan for food payments)
         $order = \App\Models\PesananMakananHeader::find($this->id_pesan);
-        
+
         if (!$order) {
             \Log::error('Food order not found for payment', [
                 'pembayaran_id' => $this->id_pembayaran,
@@ -464,49 +464,153 @@ class Pembayaran extends Model
             'status' => $status,
         ]);
 
+        return $this->updateOrderStatus($order, $status, 'food');
+    }
+
+    /**
+     * Process galon order payment status update.
+     */
+    private function processGalonOrderStatus(string $status): bool
+    {
+        // Find galon order by id_pesan (which stores id_order_galon for galon payments)
+        $order = \App\Models\PesananGalon::find($this->id_pesan);
+
+        if (!$order) {
+            \Log::error('Galon order not found for payment', [
+                'pembayaran_id' => $this->id_pembayaran,
+                'id_pesan' => $this->id_pesan,
+            ]);
+            return false;
+        }
+
+        \Log::info('Processing Galon Order Payment', [
+            'order_id' => $order->id_order_galon,
+            'status' => $status,
+        ]);
+
+        return $this->updateOrderStatus($order, $status, 'galon');
+    }
+
+    /**
+     * Process laundry order payment status update.
+     */
+    private function processLaundryOrderStatus(string $status): bool
+    {
+        // Find laundry order by id_pesan (which stores id_order_laundry for laundry payments)
+        $order = \App\Models\PesananLaundry::find($this->id_pesan);
+
+        if (!$order) {
+            \Log::error('Laundry order not found for payment', [
+                'pembayaran_id' => $this->id_pembayaran,
+                'id_pesan' => $this->id_pesan,
+            ]);
+            return false;
+        }
+
+        \Log::info('Processing Laundry Order Payment', [
+            'order_id' => $order->id_order_laundry,
+            'status' => $status,
+        ]);
+
         switch ($status) {
             case 'settlement':
             case 'capture':
-                // Payment successful - update order status to diproses
-                if ($order->status_antar === PesananMakananHeader::STATUS_MENUNGGU_BAYAR) {
-                    $order->status_antar = PesananMakananHeader::STATUS_DIPROSES;
+                // Payment successful - update status to sedang_dicuci
+                if ($order->status_laundry === \App\Models\PesananLaundry::STATUS_MENUNGGU_BAYAR) {
+                    $order->status_laundry = \App\Models\PesananLaundry::STATUS_SEDANG_DICUCI;
                     $order->save();
                 }
-                \Log::info('Food order payment settled', [
-                    'order_id' => $order->id_pesanan_makanan,
-                    'new_status' => $order->status_antar,
+                \Log::info('Laundry order payment settled', [
+                    'order_id' => $order->id_order_laundry,
+                    'new_status' => $order->status_laundry,
                 ]);
                 return true;
 
             case 'pending':
-                // Payment is pending - don't change order status
-                \Log::info('Food order payment pending', [
-                    'order_id' => $order->id_pesanan_makanan,
-                ]);
+                \Log::info('Laundry order payment pending', ['order_id' => $order->id_order_laundry]);
                 return true;
 
             case 'cancel':
             case 'deny':
             case 'expire':
-                // Payment cancelled/expired - update order status back to menunggu_bayar or batalkan
-                if ($order->status_antar === PesananMakananHeader::STATUS_MENUNGGU_BAYAR) {
-                    $order->status_antar = PesananMakananHeader::STATUS_DIBATALKAN;
+                // Payment cancelled/expired
+                if ($order->status_laundry === \App\Models\PesananLaundry::STATUS_MENUNGGU_BAYAR) {
+                    $order->status_laundry = \App\Models\PesananLaundry::STATUS_DIBATALKAN;
                     $order->save();
-                    
-                    // Restore stock
-                    foreach ($order->details as $detail) {
-                        $detail->makanan->increment('stok', $detail->jumlah);
-                    }
                 }
-                \Log::info('Food order payment cancelled', [
-                    'order_id' => $order->id_pesanan_makanan,
-                    'new_status' => $order->status_antar,
+                \Log::info('Laundry order payment cancelled', [
+                    'order_id' => $order->id_order_laundry,
+                    'new_status' => $order->status_laundry,
                 ]);
                 return true;
 
             default:
-                \Log::warning('Unknown food order payment status', [
-                    'order_id' => $order->id_pesanan_makanan,
+                \Log::warning('Unknown laundry order payment status', [
+                    'order_id' => $order->id_order_laundry,
+                    'status' => $status,
+                ]);
+                return false;
+        }
+    }
+
+    /**
+     * Update order status helper method.
+     */
+    private function updateOrderStatus($order, string $status, string $type): bool
+    {
+        switch ($status) {
+            case 'settlement':
+            case 'capture':
+                // Payment successful
+                if ($type === 'food') {
+                    if ($order->status_antar === \App\Models\PesananMakananHeader::STATUS_MENUNGGU_BAYAR) {
+                        $order->status_antar = \App\Models\PesananMakananHeader::STATUS_DIPROSES;
+                        $order->save();
+                    }
+                } else { // galon
+                    if ($order->status_galon === \App\Models\PesananGalon::STATUS_MENUNGGU_BAYAR) {
+                        $order->status_galon = \App\Models\PesananGalon::STATUS_DIPROSES;
+                        $order->save();
+                    }
+                }
+                \Log::info("{$type} order payment settled", [
+                    'order_id' => $order->getKey(),
+                    'new_status' => $type === 'food' ? $order->status_antar : $order->status_galon,
+                ]);
+                return true;
+
+            case 'pending':
+                \Log::info("{$type} order payment pending", ['order_id' => $order->getKey()]);
+                return true;
+
+            case 'cancel':
+            case 'deny':
+            case 'expire':
+                // Payment cancelled/expired
+                if ($type === 'food') {
+                    if ($order->status_antar === \App\Models\PesananMakananHeader::STATUS_MENUNGGU_BAYAR) {
+                        $order->status_antar = \App\Models\PesananMakananHeader::STATUS_DIBATALKAN;
+                        $order->save();
+                        // Restore stock
+                        foreach ($order->details as $detail) {
+                            $detail->makanan->increment('stok', $detail->jumlah);
+                        }
+                    }
+                } else { // galon
+                    if ($order->status_galon === \App\Models\PesananGalon::STATUS_MENUNGGU_BAYAR) {
+                        $order->status_galon = \App\Models\PesananGalon::STATUS_DIBATALKAN;
+                        $order->save();
+                    }
+                }
+                \Log::info("{$type} order payment cancelled", [
+                    'order_id' => $order->getKey(),
+                    'new_status' => $type === 'food' ? $order->status_antar : $order->status_galon,
+                ]);
+                return true;
+
+            default:
+                \Log::warning("Unknown {$type} order payment status", [
+                    'order_id' => $order->getKey(),
                     'status' => $status,
                 ]);
                 return false;

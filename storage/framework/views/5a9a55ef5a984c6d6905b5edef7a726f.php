@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Login - Sewa An Kost'); ?>
 
-@section('title', 'Login - Sewa An Kost')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div style="max-width: 1200px; margin: 0 auto; padding: 40px 20px;">
     <div class="container" style="max-width: 450px; padding: 40px;">
         <div style="text-align: center; margin-bottom: 30px;">
@@ -11,24 +9,26 @@
             <p style="color: #666; font-size: 14px;">Masuk ke akun Anda</p>
         </div>
 
-        @if ($errors->any())
+        <?php if($errors->any()): ?>
             <div class="alert alert-danger">
-                {{ $errors->first() }}
-            </div>
-        @endif
+                <?php echo e($errors->first()); ?>
 
-        @if (session('success'))
+            </div>
+        <?php endif; ?>
+
+        <?php if(session('success')): ?>
             <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
+                <?php echo e(session('success')); ?>
 
-        <form method="POST" action="{{ route('login') }}">
-            @csrf
+            </div>
+        <?php endif; ?>
+
+        <form method="POST" action="<?php echo e(route('login')); ?>">
+            <?php echo csrf_field(); ?>
 
             <div class="form-group">
                 <label for="email">Email</label>
-                <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus placeholder="Masukkan email Anda">
+                <input type="email" id="email" name="email" value="<?php echo e(old('email')); ?>" required autofocus placeholder="Masukkan email Anda">
             </div>
 
             <div class="form-group">
@@ -92,7 +92,7 @@
         <div class="text-center mt-20">
             <p style="color: #666; font-size: 14px;">
                 Belum punya akun?
-                <a href="{{ route('register') }}" class="link">Register disini</a>
+                <a href="<?php echo e(route('register')); ?>" class="link">Register disini</a>
             </p>
         </div>
     </div>
@@ -126,4 +126,6 @@
         }
     }
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\laravel-sewaan-kost\resources\views/auth/login.blade.php ENDPATH**/ ?>
